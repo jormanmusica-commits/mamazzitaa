@@ -1,0 +1,5 @@
+{
+  "name": "Mamazzitaa",
+  "description": "Un sistema visual de gestión de mesas y pedidos para restaurantes. Sigue el estado de las mesas con códigos de color, gestiona pedidos y agiliza el servicio desde pendiente hasta pagado.",
+  "requestFramePermissions": []
+}
