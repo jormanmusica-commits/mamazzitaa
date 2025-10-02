@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { Table, OrderItem, TableStatus, Product } from '../types';
 import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon } from './icons';
 
@@ -33,12 +32,8 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
   const itemNameInputRef = useRef<HTMLInputElement>(null);
   const guestSelectorRef = useRef<HTMLDivElement>(null);
   
-  const [recommendationQuery, setRecommendationQuery] = useState('');
-  const [recommendationResults, setRecommendationResults] = useState<{ product: Product, reason: string }[]>([]);
-  const [isRecommending, setIsRecommending] = useState(false);
-  const [recommendationError, setRecommendationError] = useState<string | null>(null);
-
-  const ai = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
+  const [filterQuery, setFilterQuery] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
   // --- Swipe Gesture Logic ---
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -163,68 +158,26 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
       setItemName(product.name);
       setPrice(product.price?.toString() ?? '');
       setSearchResults([]);
-      setRecommendationResults([]);
-      setRecommendationQuery('');
+      setFilteredProducts([]);
+      setFilterQuery('');
       document.getElementById('quantityInput')?.focus();
   };
-  
-  const handleRecommendationSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!recommendationQuery.trim()) return;
 
-    setIsRecommending(true);
-    setRecommendationError(null);
-    setRecommendationResults([]);
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setFilterQuery(query);
 
-    const systemInstruction = "You are an expert sommelier and bartender at a high-end Mexican cocktail bar called 'Mamazzita'. Your task is to recommend drinks from our menu to customers based on their preferences. You must only recommend drinks that are on the provided menu. Respond ONLY with a JSON array of objects, where each object contains the 'id' of the recommended product and a brief 'reason' for the recommendation.";
-    
-    const menuForPrompt = products.map(p => ({ id: p.id, name: p.name, category: p.category }));
-
-    const schema = {
-        type: Type.ARRAY,
-        items: {
-            type: Type.OBJECT,
-            properties: {
-                id: { type: Type.STRING, description: "The unique ID of the recommended product from the menu." },
-                reason: { type: Type.STRING, description: "A very brief explanation (max 15 words) in Spanish of why this drink is a good recommendation." }
-            },
-            required: ['id', 'reason'],
-        },
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `Customer request: "${recommendationQuery}". Our menu: ${JSON.stringify(menuForPrompt)}. Based on the customer's request, please recommend up to 5 suitable drinks from the menu.`,
-            config: {
-                systemInstruction,
-                responseMimeType: "application/json",
-                responseSchema: schema,
-            },
-        });
-
-        const resultText = response.text.trim();
-        const recommendedItems: { id: string; reason: string }[] = JSON.parse(resultText);
-        
-        const resultsWithProducts = recommendedItems
-            .map(item => {
-                const product = products.find(p => p.id === item.id);
-                return product ? { product, reason: item.reason } : null;
-            })
-            .filter((item): item is { product: Product; reason: string } => item !== null);
-        
-        setRecommendationResults(resultsWithProducts);
-        if (resultsWithProducts.length === 0) {
-            setRecommendationError("No se encontraron recomendaciones para tu búsqueda.");
-        }
-
-    } catch (error) {
-        console.error("Error fetching recommendations:", error);
-        setRecommendationError("Hubo un error al buscar recomendaciones. Por favor, intenta de nuevo.");
-    } finally {
-        setIsRecommending(false);
+    if (query.trim() === '') {
+        setFilteredProducts([]);
+        return;
     }
+
+    const results = products.filter(p => 
+        p.name.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredProducts(results);
   };
+  
 
   const handleAddItemClick = (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,25 +209,18 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
       >
         <header className="flex items-center justify-between p-4 border-b border-gray-700">
             <div className="flex-1">
-                 <form onSubmit={handleRecommendationSearch} className="max-w-xs">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={recommendationQuery}
-                            onChange={(e) => setRecommendationQuery(e.target.value)}
-                            placeholder="Buscar recomendación..."
-                            className="w-full bg-gray-700 border border-gray-600 rounded-md pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                        />
-                        <button 
-                            type="submit" 
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-purple-400 disabled:opacity-50"
-                            disabled={isRecommending}
-                            aria-label="Buscar recomendación"
-                        >
-                            <SearchIcon />
-                        </button>
+                <div className="relative max-w-xs">
+                    <input
+                        type="text"
+                        value={filterQuery}
+                        onChange={handleFilterChange}
+                        placeholder="Buscar producto..."
+                        className="w-full bg-gray-700 border border-gray-600 rounded-md pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    />
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                        <SearchIcon />
                     </div>
-                </form>
+                </div>
             </div>
             <div className="flex-shrink-0 mx-4">
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 uppercase">
@@ -422,47 +368,52 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
           </form>
 
             <div className="mb-6">
-                {isRecommending && (
-                    <div className="text-center p-4">
-                        <p className="text-purple-300 animate-pulse">Buscando las mejores recomendaciones...</p>
-                    </div>
-                )}
-                {recommendationError && !isRecommending && (
-                    <div className="text-center p-4 bg-red-900/50 border border-red-700 rounded-md">
-                        <p className="text-red-300">{recommendationError}</p>
-                    </div>
-                )}
-                {!isRecommending && recommendationResults.length > 0 && (
+                {filterQuery.trim() !== '' && (
                     <div>
-                        <div className="flex justify-between items-center mb-2">
-                           <h3 className="flex-1 text-center text-lg font-semibold text-purple-300 uppercase tracking-wider pl-6">Recomendaciones para ti</h3>
-                           <button
-                               onClick={() => {
-                                   setRecommendationResults([]);
-                                   setRecommendationQuery('');
-                               }}
-                               className="text-gray-400 hover:text-white transition-colors"
-                               aria-label="Cerrar recomendaciones"
-                           >
-                               <CloseIcon />
-                           </button>
-                       </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {recommendationResults.map(({ product, reason }) => (
-                                <button 
-                                    key={product.id}
-                                    onClick={() => handleSelectProduct(product)} 
-                                    className="w-full text-left p-3 bg-gray-900/50 rounded-md hover:bg-purple-800/40 border border-gray-700 hover:border-purple-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                >
-                                    <p className="font-bold text-white">{getDisplayName(product.name)}</p>
-                                    <p className="text-sm text-gray-400 italic mt-1">"{reason}"</p>
-                                </button>
-                            ))}
-                        </div>
+                        {filteredProducts.length > 0 ? (
+                           <>
+                               <div className="flex justify-between items-center mb-2">
+                                  <h3 className="flex-1 text-left text-lg font-semibold text-purple-300 uppercase tracking-wider">Resultados de la búsqueda</h3>
+                                   <button
+                                       onClick={() => {
+                                           setFilteredProducts([]);
+                                           setFilterQuery('');
+                                       }}
+                                       className="text-gray-400 hover:text-white transition-colors"
+                                       aria-label="Cerrar búsqueda"
+                                   >
+                                       <CloseIcon />
+                                   </button>
+                               </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
+                                    {filteredProducts.map((product) => {
+                                        const nameParts = product.name.split(' - ');
+                                        const title = nameParts[0];
+                                        const description = nameParts.slice(1).join(' - ');
+                                        return (
+                                            <button 
+                                                key={product.id}
+                                                onClick={() => handleSelectProduct(product)} 
+                                                className="w-full text-left p-3 bg-gray-900/50 rounded-md hover:bg-purple-800/40 border border-gray-700 hover:border-purple-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            >
+                                                <p className="font-bold text-white">{title}</p>
+                                                {description && (
+                                                    <p className="text-sm text-gray-300 mt-1">{description}</p>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                           </>
+                        ) : (
+                            <div className="text-center p-4 bg-gray-900/50 border border-gray-700 rounded-md">
+                                <p className="text-gray-400">No se encontraron productos para "{filterQuery}"</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
-
+            
             {isSummaryView ? (
                  <div>
                     <h3 className="text-xl font-bold text-center mb-4 text-purple-300 uppercase tracking-wider">Resumen del Pedido</h3>
