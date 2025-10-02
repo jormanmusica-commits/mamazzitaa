@@ -215,7 +215,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
                         value={filterQuery}
                         onChange={handleFilterChange}
                         placeholder="Buscar producto..."
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        className="w-full bg-gray-700 border border-gray-600 rounded-md pl-10 pr-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
                     />
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <SearchIcon />
@@ -293,7 +293,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setTimeout(() => setIsInputFocused(false), 150)}
                     placeholder="Buscar Artículo..."
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
                     required
                     />
                     {isInputFocused && searchResults.length > 0 && (
@@ -320,7 +320,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
                       onChange={(e) => setQuantity(e.target.value.replace(/[^0-9]/g, ''))}
                       min="1"
                       placeholder="Cant."
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none text-center"
+                      className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none text-center"
                       required
                     />
                   </div>
@@ -332,7 +332,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
                               pattern="[0-9.]*"
                               value={price}
                               onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none text-center pr-8"
+                              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none text-center pr-8"
                               placeholder="0.00"
                           />
                           <span className="absolute inset-y-0 right-3 flex items-center text-gray-400 pointer-events-none">
@@ -349,7 +349,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                         placeholder="Ej: sin azúcar, poco hielo..."
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
                         rows={2}
                       ></textarea>
                     </div>

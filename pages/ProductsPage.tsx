@@ -48,7 +48,7 @@ const ProductsPage: React.FC<ProductsPageProps> = ({ categories, products, onUpd
                             type="text"
                             value={editingPrice}
                             onChange={(e) => setEditingPrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                            className="w-20 bg-gray-800 border border-gray-600 rounded-md px-2 py-1 focus:ring-2 focus:ring-purple-500 focus:outline-none text-right"
+                            className="w-20 bg-gray-800 border border-gray-600 rounded-md px-2 py-1 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none text-right"
                             autoFocus
                             onKeyDown={(e) => {
                                 if(e.key === 'Enter') handleSavePrice(product);
