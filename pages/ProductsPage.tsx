@@ -5,34 +5,12 @@ import { PencilIcon, CheckIcon, CloseIcon } from '../components/icons';
 interface ProductsPageProps {
   categories: Category[];
   products: Product[];
-  onAddProduct: (newProductData: Omit<Product, 'id'>) => void;
   onUpdateProduct: (updatedProduct: Product) => void;
 }
 
-const ProductsPage: React.FC<ProductsPageProps> = ({ categories, products, onAddProduct, onUpdateProduct }) => {
-  const [newProductNames, setNewProductNames] = useState<Record<string, string>>({});
-  const [newProductPrices, setNewProductPrices] = useState<Record<string, string>>({});
+const ProductsPage: React.FC<ProductsPageProps> = ({ categories, products, onUpdateProduct }) => {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editingPrice, setEditingPrice] = useState<string>('');
-
-  const handleInputChange = (categoryId: string, value: string) => {
-    setNewProductNames(prev => ({ ...prev, [categoryId]: value }));
-  };
-
-  const handlePriceInputChange = (categoryId: string, value: string) => {
-    setNewProductPrices(prev => ({ ...prev, [categoryId]: value.replace(/[^0-9.]/g, '') }));
-  };
-
-  const handleAddProduct = (e: React.FormEvent, categoryId: string) => {
-    e.preventDefault();
-    const productName = newProductNames[categoryId]?.trim();
-    const productPrice = parseFloat(newProductPrices[categoryId] || '0');
-    if (productName) {
-      onAddProduct({ name: productName, category: categoryId, price: productPrice });
-      handleInputChange(categoryId, '');
-      handlePriceInputChange(categoryId, '');
-    }
-  };
 
   const handleEditClick = (product: Product) => {
     setEditingProductId(product.id);
@@ -60,28 +38,6 @@ const ProductsPage: React.FC<ProductsPageProps> = ({ categories, products, onAdd
           <div key={category.id} className="bg-gray-800 p-6 rounded-xl shadow-lg">
             <h2 className="text-2xl font-bold text-purple-400 border-b-2 border-gray-700 pb-2 mb-4">{category.name}</h2>
             
-            <div className="mb-6">
-                <form onSubmit={(e) => handleAddProduct(e, category.id)} className="flex flex-col sm:flex-row gap-2">
-                    <input
-                        type="text"
-                        placeholder={`Añadir nuevo producto a ${category.name}...`}
-                        value={newProductNames[category.id] || ''}
-                        onChange={(e) => handleInputChange(category.id, e.target.value)}
-                        className="flex-grow bg-gray-700 border border-gray-600 rounded-md px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Precio"
-                        value={newProductPrices[category.id] || ''}
-                        onChange={(e) => handlePriceInputChange(category.id, e.target.value)}
-                        className="w-full sm:w-28 bg-gray-700 border border-gray-600 rounded-md px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none text-center"
-                    />
-                    <button type="submit" className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-md font-semibold transition-colors">
-                        Añadir
-                    </button>
-                </form>
-            </div>
-
             <ul className="space-y-2">
               {products.filter(p => p.category === category.id).map(product => (
                 <li key={product.id} className="bg-gray-700 p-3 rounded-md flex justify-between items-center">
