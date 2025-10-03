@@ -374,11 +374,13 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                                     }).map(item => (
                                     <div
                                       key={item.id}
-                                      onDoubleClick={() => setNoteModalItem(item)}
-                                      className={`p-3 rounded-lg cursor-pointer ${item.status === 'pending' ? 'bg-yellow-900/50' : 'bg-green-800/40'}`}
+                                      className={`p-3 rounded-lg ${item.status === 'pending' ? 'bg-yellow-900/50' : 'bg-green-800/40'}`}
                                     >
                                       <div className="flex items-start justify-between">
-                                        <div className="flex-grow mr-2">
+                                        <div 
+                                          className="flex-grow mr-2 cursor-pointer"
+                                          onDoubleClick={() => setNoteModalItem(item)}
+                                        >
                                           <p className="font-semibold text-white mb-1">{item.quantity} x {getDisplayName(item.name)}</p>
                                           <div className="text-sm text-gray-400">
                                             <span>{item.price.toFixed(2)} €</span>
@@ -402,20 +404,20 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); onDecrementItem(item.id); }}
+                                                    onClick={() => onDecrementItem(item.id)}
                                                     className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
                                                     aria-label={`Quitar uno de ${item.name}`}
                                                 >
                                                     <MinusIcon />
                                                 </button>
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); onAddItem({ name: item.name, quantity: 1, price: item.price, note: item.note, guest: item.guest }, item.id); }}
+                                                    onClick={() => onAddItem({ name: item.name, quantity: 1, price: item.price, note: item.note, guest: item.guest }, item.id)}
                                                     className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
                                                     aria-label={`Añadir uno más de ${item.name}`}
                                                 >
                                                     <PlusIcon />
                                                 </button>
-                                                <button onClick={(e) => { e.stopPropagation(); onRequestDeleteItem(item.id, item.name); }} className="text-gray-500 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-gray-600">
+                                                <button onClick={() => onRequestDeleteItem(item.id, item.name)} className="text-gray-500 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-gray-600">
                                                     <TrashIcon />
                                                 </button>
                                             </div>
