@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { Table, TableStatus, OrderItem, Product } from '../types';
 import TableLayout from '../components/TableLayout';
-import OrderModal from '../components/OrderModal';
+import OrderPage from './OrderPage';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { CogIcon } from '../components/icons';
 
 const initialLayouts: Record<string, Table[]> = {
   principal: [
@@ -44,9 +45,10 @@ const initialLayouts: Record<string, Table[]> = {
 
 interface SalaPageProps {
   products: Product[];
+  onNavigate: (page: 'sala' | 'productos') => void;
 }
 
-const SalaPage: React.FC<SalaPageProps> = ({ products }) => {
+const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
   const [layouts, setLayouts] = useState<Record<string, Table[]>>(initialLayouts);
   const roomOrder = useMemo(() => ['principal', 'terraza'], []);
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
@@ -225,6 +227,18 @@ const SalaPage: React.FC<SalaPageProps> = ({ products }) => {
 
         updateTable(currentRoomId, selectedTableId, { order: updatedOrder, status: newStatus });
     }
+  };
+
+  const handleUpdateItemNote = (itemId: string, note: string) => {
+    if (!selectedTableId) return;
+    const currentTable = tables.find(t => t.id === selectedTableId);
+    if (!currentTable) return;
+
+    const updatedOrder = currentTable.order.map(item =>
+      item.id === itemId ? { ...item, note } : item
+    );
+
+    updateTable(currentRoomId, selectedTableId, { order: updatedOrder });
   };
 
   const handleCommand = () => {
@@ -499,8 +513,25 @@ const SalaPage: React.FC<SalaPageProps> = ({ products }) => {
   }, [selectedTableId, layouts, currentRoomId]);
 
 
+  if (detailedSelectedTable) {
+    return (
+      <OrderPage
+        table={detailedSelectedTable}
+        products={products}
+        onClose={handleCloseModal}
+        onAddItem={handleAddItem}
+        onCommandAndClose={handleCommandAndClose}
+        onPrintBill={handlePrintBill}
+        onCloseTable={handleCloseTable}
+        onRequestDeleteItem={requestDeleteItem}
+        onDecrementItem={handleDecrementItem}
+        onUpdateItemNote={handleUpdateItemNote}
+      />
+    );
+  }
+
   return (
-    <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} className="pb-28">
+    <div className="flex flex-col h-screen bg-gray-900 text-white" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       {confirmation && (
         <ConfirmationModal
           isOpen={true}
@@ -510,55 +541,56 @@ const SalaPage: React.FC<SalaPageProps> = ({ products }) => {
           onCancel={() => setConfirmation(null)}
         />
       )}
-      <div className="text-center py-2">
-        <div>
-            <h2 className="text-2xl font-semibold uppercase tracking-widest text-gray-300">{currentRoomId}</h2>
-            <div className="flex justify-center gap-2 mt-2">
-                {roomOrder.map((room, index) => (
-                    <div key={room} onClick={() => setCurrentRoomIndex(index)} className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${index === currentRoomIndex ? 'bg-purple-400 scale-125' : 'bg-gray-600'}`}></div>
-                ))}
-            </div>
-        </div>
-      </div>
-      
-      <div className="container mx-auto">
-        <div className="relative w-full overflow-hidden" ref={layoutRef}>
-          <div
-            className="flex transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(-${currentRoomIndex * 100}%)` }}
-          >
-            {roomOrder.map((roomId) => (
-              <div key={roomId} className="w-full flex-shrink-0">
-                <TableLayout
-                  tables={layouts[roomId] || []}
-                  isEditMode={isEditMode}
-                  onTableDragStart={handleTableDragStart}
-                  onDeleteTable={requestDeleteTable}
-                  isChangingTableMode={isChangingTableMode}
-                  sourceTableId={sourceTableForChange?.tableId ?? null}
-                  onTableClick={handleTableClick}
-                />
+      <header className="flex-shrink-0 p-4 flex justify-between items-center bg-gray-800 border-b border-gray-700 shadow-md z-10">
+        <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+          Sala Mamazzita
+        </h1>
+        <button 
+          onClick={() => onNavigate('productos')} 
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105"
+        >
+          <CogIcon />
+          <span className="hidden sm:inline">Productos</span>
+        </button>
+      </header>
+
+      <div className="flex-grow overflow-hidden flex flex-col">
+        <div className="text-center py-2 flex-shrink-0">
+          <div>
+              <h2 className="text-2xl font-semibold uppercase tracking-widest text-gray-300">{currentRoomId}</h2>
+              <div className="flex justify-center gap-2 mt-2">
+                  {roomOrder.map((room, index) => (
+                      <div key={room} onClick={() => setCurrentRoomIndex(index)} className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${index === currentRoomIndex ? 'bg-purple-400 scale-125' : 'bg-gray-600'}`}></div>
+                  ))}
               </div>
-            ))}
+          </div>
+        </div>
+      
+        <div className="flex-grow container mx-auto w-full relative" ref={layoutRef}>
+          <div className="absolute inset-0">
+            <div
+              className="flex transition-transform duration-500 ease-in-out h-full"
+              style={{ transform: `translateX(-${currentRoomIndex * 100}%)` }}
+            >
+              {roomOrder.map((roomId) => (
+                <div key={roomId} className="w-full flex-shrink-0 h-full">
+                  <TableLayout
+                    tables={layouts[roomId] || []}
+                    isEditMode={isEditMode}
+                    onTableDragStart={handleTableDragStart}
+                    onDeleteTable={requestDeleteTable}
+                    isChangingTableMode={isChangingTableMode}
+                    sourceTableId={sourceTableForChange?.tableId ?? null}
+                    onTableClick={handleTableClick}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {detailedSelectedTable && (
-        <OrderModal
-          table={detailedSelectedTable}
-          products={products}
-          onClose={handleCloseModal}
-          onAddItem={handleAddItem}
-          onCommandAndClose={handleCommandAndClose}
-          onPrintBill={handlePrintBill}
-          onCloseTable={handleCloseTable}
-          onRequestDeleteItem={requestDeleteItem}
-          onDecrementItem={handleDecrementItem}
-        />
-      )}
-
-      <footer className="fixed bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-sm p-4 border-t border-gray-700 z-30">
+      <footer className="flex-shrink-0 z-30 bg-gray-900/80 backdrop-blur-sm p-4 border-t border-gray-700">
         <div className="container mx-auto flex flex-col items-center gap-3">
           {isChangingTableMode && (
             <p className="text-lg font-semibold text-yellow-400 animate-pulse">

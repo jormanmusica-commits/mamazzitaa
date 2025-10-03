@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Category } from './types';
-import Header from './components/Header';
 import SalaPage from './pages/SalaPage';
 import ProductsPage from './pages/ProductsPage';
 
@@ -115,22 +114,17 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-        <Header currentPage={page} onNavigate={setPage} />
-        <main className="p-2 sm:p-4 md:p-6">
-            {page === 'sala' && <SalaPage products={products} />}
-            {page === 'productos' && (
-                <ProductsPage 
-                    categories={categories}
-                    products={products}
-                    onUpdateProduct={handleUpdateProduct}
-                />
-            )}
-        </main>
-         <footer className="text-center pb-4 text-gray-500 text-sm">
-            <p>Desarrollado con React & Tailwind CSS</p>
-        </footer>
-    </div>
+    <>
+      {page === 'sala' && <SalaPage products={products} onNavigate={setPage} />}
+      {page === 'productos' && (
+          <ProductsPage 
+              categories={categories}
+              products={products}
+              onUpdateProduct={handleUpdateProduct}
+              onNavigate={setPage}
+          />
+      )}
+    </>
   );
 }
 
