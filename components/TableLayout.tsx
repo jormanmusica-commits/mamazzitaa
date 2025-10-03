@@ -10,9 +10,10 @@ interface TableLayoutProps {
   isChangingTableMode: boolean;
   sourceTableId: number | null;
   onTableClick: (table: TableType) => void;
+  alertingTables: Set<number>;
 }
 
-const TableLayout: React.FC<TableLayoutProps> = ({ tables, isEditMode, onTableDragStart, onDeleteTable, isChangingTableMode, sourceTableId, onTableClick }) => {
+const TableLayout: React.FC<TableLayoutProps> = ({ tables, isEditMode, onTableDragStart, onDeleteTable, isChangingTableMode, sourceTableId, onTableClick, alertingTables }) => {
   return (
     <div className="relative w-full h-full p-4 overflow-hidden">
       <div className="absolute inset-0 bg-grid-gray-700/[0.2]"></div>
@@ -29,6 +30,7 @@ const TableLayout: React.FC<TableLayoutProps> = ({ tables, isEditMode, onTableDr
           isChangingTableMode={isChangingTableMode}
           sourceTableId={sourceTableId}
           onTableClick={() => onTableClick(table)}
+          isAlerting={alertingTables.has(table.id)}
         />
       ))}
     </div>

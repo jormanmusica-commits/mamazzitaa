@@ -8,7 +8,7 @@ interface OrderPageProps {
   table: Table;
   products: Product[];
   onClose: () => void;
-  onAddItem: (newItemData: Omit<OrderItem, 'id' | 'status'>, sourceItemId?: string) => void;
+  onAddItem: (newItemData: Omit<OrderItem, 'id' | 'status' | 'timestamp'>, sourceItemId?: string) => void;
   onCommandAndClose: () => void;
   onPrintBill: () => void;
   onCloseTable: () => void;
@@ -21,6 +21,19 @@ const getDisplayName = (name: string) => {
   return name.split(' - ')[0];
 };
 
+const formatTimeAgo = (timestamp: number, now: number): string => {
+    if (!timestamp) return '';
+    const seconds = Math.floor((now - timestamp) / 1000);
+    const minutes = Math.floor(seconds / 60);
+
+    if (minutes < 1) return 'ahora';
+    if (minutes < 60) return `hace ${minutes} min`;
+    
+    const hours = Math.floor(minutes / 60);
+    return `hace ${hours}h ${minutes % 60}m`;
+};
+
+
 const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddItem, onCommandAndClose, onPrintBill, onCloseTable, onRequestDeleteItem, onDecrementItem, onUpdateItemNote }) => {
   const [activeGuest, setActiveGuest] = useState(1);
   const [isGuestSelectorOpen, setIsGuestSelectorOpen] = useState(false);
@@ -30,6 +43,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
   const [filterQuery, setFilterQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [noteModalItem, setNoteModalItem] = useState<OrderItem | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   // --- Swipe Gesture Logic ---
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -45,6 +59,13 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
       setActiveGuest(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 30000); // Update time every 30 seconds
+    return () => clearInterval(timer);
   }, []);
   
    useEffect(() => {
@@ -369,9 +390,16 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                                         </div>
 
                                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${item.status === 'pending' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>
-                                                {item.status === 'pending' ? 'Pendiente' : 'Comandado'}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                {item.status === 'pending' && (
+                                                    <span className="text-xs text-yellow-300 font-medium">
+                                                        {formatTimeAgo(item.timestamp, currentTime)}
+                                                    </span>
+                                                )}
+                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${item.status === 'pending' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>
+                                                    {item.status === 'pending' ? 'Pendiente' : 'Comandado'}
+                                                </span>
+                                            </div>
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); onDecrementItem(item.id); }}

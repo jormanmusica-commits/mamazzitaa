@@ -10,9 +10,10 @@ interface TableProps {
   isChangingTableMode: boolean;
   sourceTableId: number | null;
   onTableClick: () => void;
+  isAlerting: boolean;
 }
 
-const getStatusClasses = (status: TableStatus, isChangingTableMode: boolean, isSource: boolean, sourceTableId: number | null, tableId: number) => {
+const getStatusClasses = (status: TableStatus, isChangingTableMode: boolean, isSource: boolean, sourceTableId: number | null, tableId: number, isAlerting: boolean) => {
   if (isChangingTableMode) {
     // Stage 2: Source table is selected, now we are selecting a destination
     if (sourceTableId) {
@@ -37,7 +38,7 @@ const getStatusClasses = (status: TableStatus, isChangingTableMode: boolean, isS
     case TableStatus.Available:
       return 'bg-gray-500 hover:bg-gray-600 text-gray-100 border-gray-400';
     case TableStatus.Pending:
-      return 'bg-yellow-500 hover:bg-yellow-600 text-yellow-900 border-yellow-400 animate-pulse';
+      return `bg-yellow-500 hover:bg-yellow-600 text-yellow-900 border-yellow-400 animate-pulse ${isAlerting ? 'ring-4 ring-red-500 ring-offset-2 ring-offset-gray-900' : ''}`;
     case TableStatus.Ordered:
       return 'bg-green-500 hover:bg-green-600 text-white border-green-400';
     case TableStatus.Billed:
@@ -47,7 +48,7 @@ const getStatusClasses = (status: TableStatus, isChangingTableMode: boolean, isS
   }
 };
 
-const Table: React.FC<TableProps> = ({ table, isEditMode, onDragStart, onDelete, isChangingTableMode, sourceTableId, onTableClick }) => {
+const Table: React.FC<TableProps> = ({ table, isEditMode, onDragStart, onDelete, isChangingTableMode, sourceTableId, onTableClick, isAlerting }) => {
   const tableShapeClasses = 
       table.shape === 'round' ? 'w-10 h-10 rounded-full'
     : table.shape === 'double' ? 'w-32 h-16 rounded-lg'
@@ -72,7 +73,7 @@ const Table: React.FC<TableProps> = ({ table, isEditMode, onDragStart, onDelete,
       onMouseDown={isEditMode ? onDragStart : undefined}
       onClick={!isEditMode || isChangingTableMode ? onTableClick : undefined}
       disabled={isClickDisabled}
-      className={`absolute flex items-center justify-center font-bold text-lg shadow-lg transform transition-all duration-300 focus:outline-none focus:ring-opacity-50 z-20 border-2 ${tableShapeClasses} ${getStatusClasses(table.status, isChangingTableMode, isSource, sourceTableId, table.id)} ${interactionClasses}`}
+      className={`absolute flex items-center justify-center font-bold text-lg shadow-lg transform transition-all duration-300 focus:outline-none focus:ring-opacity-50 z-20 border-2 ${tableShapeClasses} ${getStatusClasses(table.status, isChangingTableMode, isSource, sourceTableId, table.id, isAlerting)} ${interactionClasses}`}
       style={{ top: `${table.y}%`, left: `${table.x}%` }}
       aria-label={`Mesa ${table.name}`}
     >

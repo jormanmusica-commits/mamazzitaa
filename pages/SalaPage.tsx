@@ -70,6 +70,37 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
   // Ref to ensure unique, monotonically increasing IDs for items
   const lastIdTimestamp = useRef(0);
 
+  // State for time-based alerts
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 30000); // Check every 30 seconds
+    return () => clearInterval(timer);
+  }, []);
+
+  const ALERT_THRESHOLD = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  const alertingTables = useMemo(() => {
+    const tableIds = new Set<number>();
+    const now = currentTime;
+    
+    // Fix: Explicitly type the 'table' parameter to resolve type inference issues where properties on 'table' were not being recognized.
+    Object.values(layouts).flat().forEach((table: Table) => {
+        if (table.status === TableStatus.Pending) {
+            const hasOldPendingItem = table.order.some(item => 
+                item.status === 'pending' && (now - item.timestamp) > ALERT_THRESHOLD
+            );
+            if (hasOldPendingItem) {
+                tableIds.add(table.id);
+            }
+        }
+    });
+    return tableIds;
+  }, [layouts, currentTime]);
+
+
   const generateUniqueItemId = useCallback(() => {
     let newTimestamp = Date.now();
     if (newTimestamp <= lastIdTimestamp.current) {
@@ -123,7 +154,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
     }));
   };
 
-  const handleAddItem = (newItemData: Omit<OrderItem, 'id' | 'status'>, sourceItemId?: string) => {
+  const handleAddItem = (newItemData: Omit<OrderItem, 'id' | 'status' | 'timestamp'>, sourceItemId?: string) => {
     if (!selectedTableId) return;
     const currentTable = tables.find(t => t.id === selectedTableId);
     if (!currentTable) return;
@@ -159,6 +190,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
     if (existingPendingItemIndex !== -1) {
       const updatedItem = { ...order[existingPendingItemIndex] };
       updatedItem.quantity += itemToAdd.quantity;
+      updatedItem.timestamp = Date.now(); // Reset timer on interaction
       order[existingPendingItemIndex] = updatedItem;
     } else {
       const commandedMatches = order
@@ -190,6 +222,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
         ...itemToAdd,
         id: newId,
         status: 'pending',
+        timestamp: Date.now(),
       };
       order.push(newItem);
     }
@@ -580,6 +613,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
                         isChangingTableMode={isChangingTableMode}
                         sourceTableId={sourceTableForChange?.tableId ?? null}
                         onTableClick={handleTableClick}
+                        alertingTables={alertingTables}
                       />
                     </div>
                   ))}

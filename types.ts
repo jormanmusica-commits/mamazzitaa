@@ -13,6 +13,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   status: OrderItemStatus;
+  timestamp: number;
   note?: string;
   guest?: number;
 }
