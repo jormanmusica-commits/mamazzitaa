@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, OrderItem, TableStatus, Product } from '../types';
-import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon } from './icons';
+import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon, DisketteIcon, BellIcon, PrinterIcon, XCircleIcon } from './icons';
 
 interface OrderModalProps {
   table: Table;
   products: Product[];
   onClose: () => void;
   onAddItem: (newItemData: Omit<OrderItem, 'id' | 'status'>, sourceItemId?: string) => void;
-  onCommand: () => void;
+  onCommandAndClose: () => void;
   onPrintBill: () => void;
   onCloseTable: () => void;
   onRequestDeleteItem: (itemId: string, itemName: string) => void;
@@ -18,18 +18,10 @@ const getDisplayName = (name: string) => {
   return name.split(' - ')[0];
 };
 
-const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAddItem, onCommand, onPrintBill, onCloseTable, onRequestDeleteItem, onDecrementItem }) => {
-  const [itemName, setItemName] = useState('');
-  const [quantity, setQuantity] = useState('1');
-  const [price, setPrice] = useState('');
-  const [note, setNote] = useState('');
-  const [showNoteInput, setShowNoteInput] = useState(false);
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [isInputFocused, setIsInputFocused] = useState(false);
+const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAddItem, onCommandAndClose, onPrintBill, onCloseTable, onRequestDeleteItem, onDecrementItem }) => {
   const [activeGuest, setActiveGuest] = useState(1);
   const [isGuestSelectorOpen, setIsGuestSelectorOpen] = useState(false);
   const [isSummaryView, setIsSummaryView] = useState(false);
-  const itemNameInputRef = useRef<HTMLInputElement>(null);
   const guestSelectorRef = useRef<HTMLDivElement>(null);
   
   const [filterQuery, setFilterQuery] = useState('');
@@ -116,20 +108,10 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
 }, [table.order]);
 
   const maxGuestNumber = useMemo(() => Math.max(0, ...Object.keys(groupedOrder).map(Number)), [groupedOrder]);
-
-  const resetForm = () => {
-    setItemName('');
-    setQuantity('1');
-    setPrice('');
-    setNote('');
-    setShowNoteInput(false);
-    setSearchResults([]);
-  };
   
   const handleSetActiveGuest = (guestNumber: number) => {
     setActiveGuest(guestNumber);
     setIsSummaryView(false); // Switch back to detail view when a guest is selected
-    itemNameInputRef.current?.focus();
   };
   
   const handleAddNewGuest = () => {
@@ -139,28 +121,15 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
   };
 
 
-  const handleItemNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setItemName(query);
-
-    if (query.trim() === '') {
-        setSearchResults([]);
-        return;
-    }
-
-    const filtered = products.filter(p => 
-        p.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setSearchResults(filtered);
-  };
-
   const handleSelectProduct = (product: Product) => {
-      setItemName(product.name);
-      setPrice(product.price?.toString() ?? '');
-      setSearchResults([]);
+      onAddItem({
+        name: product.name,
+        quantity: 1,
+        price: product.price ?? 0,
+        guest: activeGuest,
+      });
       setFilteredProducts([]);
       setFilterQuery('');
-      document.getElementById('quantityInput')?.focus();
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,22 +147,6 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
     setFilteredProducts(results);
   };
   
-
-  const handleAddItemClick = (e: React.FormEvent) => {
-    e.preventDefault();
-    const numQuantity = parseInt(quantity, 10);
-    const numPrice = parseFloat(price) || 0;
-    const finalItemName = itemName.trim();
-
-    if (finalItemName && numQuantity > 0) {
-      onAddItem(
-        { name: finalItemName, quantity: numQuantity, price: numPrice, note: note.trim(), guest: activeGuest }
-      );
-      
-      resetForm();
-    }
-  };
-  
   const hasPendingItems = useMemo(() => table.order.some(item => item.status === 'pending'), [table.order]);
   const totalAmount = useMemo(() => table.order.reduce((sum, item) => sum + (item.quantity * item.price), 0), [table.order]);
   
@@ -208,20 +161,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
         onTouchEnd={handleTouchEnd}
       >
         <header className="flex items-center justify-between p-4 border-b border-gray-700">
-            <div className="flex-1">
-                <div className="relative max-w-xs">
-                    <input
-                        type="text"
-                        value={filterQuery}
-                        onChange={handleFilterChange}
-                        placeholder="Buscar producto..."
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md pl-10 pr-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                    />
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                        <SearchIcon />
-                    </div>
-                </div>
-            </div>
+            <div className="flex-1"></div>
             <div className="flex-shrink-0 mx-4">
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 uppercase">
                     Mesa {table.name}
@@ -235,184 +175,110 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
         </header>
 
         <div className="p-6 flex-grow overflow-y-auto">
-          <form onSubmit={handleAddItemClick} className="space-y-4 mb-6">
-            <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
-                <div className="flex justify-between items-center mb-3">
-                    <div className="relative" ref={guestSelectorRef}>
-                        <button 
-                            type="button" 
-                            onClick={() => setIsGuestSelectorOpen(prev => !prev)}
-                            className="flex items-baseline gap-2 rounded-lg px-3 py-1 hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            aria-haspopup="true"
-                            aria-expanded={isGuestSelectorOpen}
-                            aria-label={`Comensal activo ${activeGuest}, haga clic para cambiar`}
-                        >
-                            <span className="text-sm font-bold text-purple-300 uppercase">
-                                Comensal Activo
-                            </span>
-                            <span className="text-2xl font-extrabold text-white leading-none">
-                                {activeGuest}
-                            </span>
-                        </button>
-                         {isGuestSelectorOpen && (
-                            <div className="absolute z-20 top-full mt-2 bg-gray-600 border border-gray-500 rounded-md shadow-lg min-w-[150px]">
-                                <ul className="py-1 max-h-48 overflow-y-auto">
-                                    {allGuestNumbers.map(guestNum => (
-                                        <li key={guestNum}>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    handleSetActiveGuest(guestNum);
-                                                    setIsGuestSelectorOpen(false);
-                                                }}
-                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${activeGuest === guestNum ? 'bg-purple-600 text-white' : 'text-gray-200 hover:bg-purple-500'}`}
-                                            >
-                                                Comensal {guestNum}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
+            <div className="flex justify-between items-center mb-6">
+                <div className="relative" ref={guestSelectorRef}>
                     <button 
                         type="button" 
-                        onClick={handleAddNewGuest}
-                        className="flex items-center gap-2 text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-md transition-colors"
+                        onClick={() => setIsGuestSelectorOpen(prev => !prev)}
+                        className="flex items-baseline gap-2 rounded-lg px-3 py-1 hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        aria-haspopup="true"
+                        aria-expanded={isGuestSelectorOpen}
+                        aria-label={`Comensal activo ${activeGuest}, haga clic para cambiar`}
                     >
-                        <UserIcon /> + Comensal
+                        <span className="text-sm font-bold text-purple-300 uppercase">
+                            Comensal Activo
+                        </span>
+                        <span className="text-2xl font-extrabold text-white leading-none">
+                            {activeGuest}
+                        </span>
                     </button>
-                </div>
-                <div className="relative">
-                    <input
-                    id="itemNameInput"
-                    ref={itemNameInputRef}
-                    type="text"
-                    value={itemName}
-                    onChange={handleItemNameChange}
-                    onFocus={() => setIsInputFocused(true)}
-                    onBlur={() => setTimeout(() => setIsInputFocused(false), 150)}
-                    placeholder="Buscar Artículo..."
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                    required
-                    />
-                    {isInputFocused && searchResults.length > 0 && (
-                        <ul className="absolute z-10 w-full bg-gray-600 border border-gray-500 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
-                            {searchResults.map(product => (
-                                <li 
-                                    key={product.id}
-                                    className="px-3 py-2 cursor-pointer hover:bg-purple-600"
-                                    onMouseDown={() => handleSelectProduct(product)}
-                                >
-                                    {product.name}
-                                </li>
-                            ))}
-                        </ul>
+                      {isGuestSelectorOpen && (
+                        <div className="absolute z-20 top-full mt-2 bg-gray-600 border border-gray-500 rounded-md shadow-lg min-w-[150px]">
+                            <ul className="py-1 max-h-48 overflow-y-auto">
+                                {allGuestNumbers.map(guestNum => (
+                                    <li key={guestNum}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                handleSetActiveGuest(guestNum);
+                                                setIsGuestSelectorOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${activeGuest === guestNum ? 'bg-purple-600 text-white' : 'text-gray-200 hover:bg-purple-500'}`}
+                                        >
+                                            Comensal {guestNum}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     )}
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <input
-                      id="quantityInput"
-                      type="text"
-                      pattern="\d*"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value.replace(/[^0-9]/g, ''))}
-                      min="1"
-                      placeholder="Cant."
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none text-center"
-                      required
-                    />
-                  </div>
-                  <div>
-                     <div className="relative">
-                          <input
-                              id="priceInput"
-                              type="text"
-                              pattern="[0-9.]*"
-                              value={price}
-                              onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none text-center pr-8"
-                              placeholder="0.00"
-                          />
-                          <span className="absolute inset-y-0 right-3 flex items-center text-gray-400 pointer-events-none">
-                              €
-                          </span>
-                      </div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  {showNoteInput ? (
-                    <div>
-                      <textarea
-                        id="noteInput"
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        placeholder="Ej: sin azúcar, poco hielo..."
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                        rows={2}
-                      ></textarea>
-                    </div>
-                  ) : (
-                    <div className="text-right">
-                      <button type="button" onClick={() => setShowNoteInput(true)} className="text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors">
-                        + Añadir Nota
-                      </button>
-                    </div>
-                  )}
-                </div>
-                 <button type="submit" className="mt-4 w-full bg-purple-600 hover:bg-purple-700 rounded-md py-2 font-semibold transition-colors">
-                  Añadir Artículo
+                <button 
+                    type="button" 
+                    onClick={handleAddNewGuest}
+                    className="flex items-center gap-2 text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-md transition-colors"
+                >
+                    <UserIcon /> + Comensal
                 </button>
             </div>
-          </form>
 
-            <div className="mb-6">
-                {filterQuery.trim() !== '' && (
-                    <div>
-                        {filteredProducts.length > 0 ? (
-                           <>
-                               <div className="flex justify-between items-center mb-2">
-                                  <h3 className="flex-1 text-left text-lg font-semibold text-purple-300 uppercase tracking-wider">Resultados de la búsqueda</h3>
-                                   <button
-                                       onClick={() => {
-                                           setFilteredProducts([]);
-                                           setFilterQuery('');
-                                       }}
-                                       className="text-gray-400 hover:text-white transition-colors"
-                                       aria-label="Cerrar búsqueda"
-                                   >
-                                       <CloseIcon />
-                                   </button>
-                               </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
-                                    {filteredProducts.map((product) => {
-                                        const nameParts = product.name.split(' - ');
-                                        const title = nameParts[0];
-                                        const description = nameParts.slice(1).join(' - ');
-                                        return (
-                                            <button 
-                                                key={product.id}
-                                                onClick={() => handleSelectProduct(product)} 
-                                                className="w-full text-left p-3 bg-gray-900/50 rounded-md hover:bg-purple-800/40 border border-gray-700 hover:border-purple-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                            >
-                                                <p className="font-bold text-white">{title}</p>
-                                                {description && (
-                                                    <p className="text-sm text-gray-300 mt-1">{description}</p>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                           </>
-                        ) : (
-                            <div className="text-center p-4 bg-gray-900/50 border border-gray-700 rounded-md">
-                                <p className="text-gray-400">No se encontraron productos para "{filterQuery}"</p>
-                            </div>
-                        )}
-                    </div>
-                )}
+            <div className="relative mb-6">
+                <input
+                    type="text"
+                    value={filterQuery}
+                    onChange={handleFilterChange}
+                    placeholder="Buscar producto y añadir..."
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md pl-10 pr-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                />
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                    <SearchIcon />
+                </div>
             </div>
+
+            {filterQuery.trim() !== '' && (
+              <div className="mb-6">
+                  {filteredProducts.length > 0 ? (
+                      <>
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="flex-1 text-left text-lg font-semibold text-purple-300 uppercase tracking-wider">Resultados de la búsqueda</h3>
+                              <button
+                                  onClick={() => {
+                                      setFilteredProducts([]);
+                                      setFilterQuery('');
+                                  }}
+                                  className="text-gray-400 hover:text-white transition-colors"
+                                  aria-label="Cerrar búsqueda"
+                              >
+                                  <CloseIcon />
+                              </button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
+                              {filteredProducts.map((product) => {
+                                  const nameParts = product.name.split(' - ');
+                                  const title = nameParts[0];
+                                  const description = nameParts.slice(1).join(' - ');
+                                  return (
+                                      <button 
+                                          key={product.id}
+                                          onClick={() => handleSelectProduct(product)} 
+                                          className="w-full text-left p-3 bg-gray-900/50 rounded-md hover:bg-purple-800/40 border border-gray-700 hover:border-purple-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                      >
+                                          <p className="font-bold text-white">{title}</p>
+                                          {description && (
+                                              <p className="text-sm text-gray-300 mt-1">{description}</p>
+                                          )}
+                                      </button>
+                                  );
+                              })}
+                          </div>
+                      </>
+                  ) : (
+                      <div className="text-center p-4 bg-gray-900/50 border border-gray-700 rounded-md">
+                          <p className="text-gray-400">No se encontraron productos para "{filterQuery}"</p>
+                      </div>
+                  )}
+              </div>
+            )}
             
             {isSummaryView ? (
                  <div>
@@ -526,27 +392,42 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
               <span className="text-2xl font-bold text-white">{totalAmount.toFixed(2)} €</span>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <button
-              onClick={onCommand}
+              onClick={onClose}
               disabled={!hasPendingItems}
-              className="w-full px-4 py-3 font-bold rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed bg-yellow-500 hover:bg-yellow-600 text-yellow-900"
+              className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-yellow-500 hover:bg-yellow-600 text-yellow-900"
+              aria-label="Guardar y Salir"
             >
-              Comandar
+              <DisketteIcon />
+              <span className="text-xs tracking-wider uppercase">Guardar</span>
+            </button>
+             <button
+              onClick={onCommandAndClose}
+              disabled={!hasPendingItems}
+              className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-green-500 hover:bg-green-600 text-white"
+              aria-label="Comandar Todo"
+            >
+              <BellIcon />
+              <span className="text-xs tracking-wider uppercase">Comandar</span>
             </button>
             <button
               onClick={onPrintBill}
               disabled={hasPendingItems || table.order.length === 0}
-              className="w-full px-4 py-3 font-bold rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 text-white"
+              className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-blue-500 hover:bg-blue-600 text-white"
+              aria-label="Imprimir Cuenta"
             >
-              Imprimir Cuenta
+              <PrinterIcon />
+              <span className="text-xs tracking-wider uppercase">Imprimir</span>
             </button>
             <button
               onClick={onCloseTable}
               disabled={table.status !== TableStatus.Billed && table.order.length > 0}
-              className="w-full px-4 py-3 font-bold rounded-lg transition-colors bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-red-600 hover:bg-red-700 text-white"
+              aria-label="Cerrar Mesa"
             >
-              Cerrar Mesa
+              <XCircleIcon />
+              <span className="text-xs tracking-wider uppercase">Cerrar</span>
             </button>
           </div>
         </footer>
@@ -558,6 +439,13 @@ const OrderModal: React.FC<OrderModalProps> = ({ table, products, onClose, onAdd
           }
           .animate-modal-enter {
             animation: modal-enter 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+          }
+          @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fade-in {
+              animation: fade-in 0.3s ease-out forwards;
           }
        `}</style>
     </div>

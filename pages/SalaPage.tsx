@@ -283,6 +283,11 @@ const SalaPage: React.FC<SalaPageProps> = ({ products }) => {
         status: TableStatus.Ordered,
     });
   };
+  
+  const handleCommandAndClose = () => {
+    handleCommand();
+    handleCloseModal();
+  };
 
   const handlePrintBill = () => {
       if (!selectedTableId) return;
@@ -545,7 +550,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products }) => {
           products={products}
           onClose={handleCloseModal}
           onAddItem={handleAddItem}
-          onCommand={handleCommand}
+          onCommandAndClose={handleCommandAndClose}
           onPrintBill={handlePrintBill}
           onCloseTable={handleCloseTable}
           onRequestDeleteItem={requestDeleteItem}
