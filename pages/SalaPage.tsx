@@ -326,7 +326,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
       message: '¿Estás seguro de que quieres eliminar este artículo del pedido? Esta acción no se puede deshacer.',
       onConfirm: () => {
         if (!selectedTableId) return;
-        const currentTable = tables.find(t => t.id === selectedTableId);
+        const currentTable = layouts[currentRoomId].find(t => t.id === selectedTableId);
         if (currentTable) {
             const updatedOrder = currentTable.order.filter(item => item.id !== itemId);
             const hasPending = updatedOrder.some(item => item.status === 'pending');
@@ -507,31 +507,13 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
 
   const detailedSelectedTable = useMemo(() => {
     if (!selectedTableId) return null;
-    // We need to find the table in the correct room, though the modal will only open for the current room
     const currentTables = layouts[currentRoomId] || [];
     return currentTables.find(t => t.id === selectedTableId) || null;
   }, [selectedTableId, layouts, currentRoomId]);
 
 
-  if (detailedSelectedTable) {
-    return (
-      <OrderPage
-        table={detailedSelectedTable}
-        products={products}
-        onClose={handleCloseModal}
-        onAddItem={handleAddItem}
-        onCommandAndClose={handleCommandAndClose}
-        onPrintBill={handlePrintBill}
-        onCloseTable={handleCloseTable}
-        onRequestDeleteItem={requestDeleteItem}
-        onDecrementItem={handleDecrementItem}
-        onUpdateItemNote={handleUpdateItemNote}
-      />
-    );
-  }
-
   return (
-    <div className="flex flex-col h-screen bg-gray-900 text-white" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+    <>
       {confirmation && (
         <ConfirmationModal
           isOpen={true}
@@ -541,89 +523,107 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
           onCancel={() => setConfirmation(null)}
         />
       )}
-      <header className="flex-shrink-0 p-4 flex justify-between items-center bg-gray-800 border-b border-gray-700 shadow-md z-10">
-        <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-          Sala Mamazzita
-        </h1>
-        <button 
-          onClick={() => onNavigate('productos')} 
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105"
-        >
-          <CogIcon />
-          <span className="hidden sm:inline">Productos</span>
-        </button>
-      </header>
 
-      <div className="flex-grow overflow-hidden flex flex-col">
-        <div className="text-center py-2 flex-shrink-0">
-          <div>
-              <h2 className="text-2xl font-semibold uppercase tracking-widest text-gray-300">{currentRoomId}</h2>
-              <div className="flex justify-center gap-2 mt-2">
-                  {roomOrder.map((room, index) => (
-                      <div key={room} onClick={() => setCurrentRoomIndex(index)} className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${index === currentRoomIndex ? 'bg-purple-400 scale-125' : 'bg-gray-600'}`}></div>
-                  ))}
-              </div>
-          </div>
-        </div>
-      
-        <div className="flex-grow container mx-auto w-full relative" ref={layoutRef}>
-          <div className="absolute inset-0">
-            <div
-              className="flex transition-transform duration-500 ease-in-out h-full"
-              style={{ transform: `translateX(-${currentRoomIndex * 100}%)` }}
+      {detailedSelectedTable ? (
+        <OrderPage
+          table={detailedSelectedTable}
+          products={products}
+          onClose={handleCloseModal}
+          onAddItem={handleAddItem}
+          onCommandAndClose={handleCommandAndClose}
+          onPrintBill={handlePrintBill}
+          onCloseTable={handleCloseTable}
+          onRequestDeleteItem={requestDeleteItem}
+          onDecrementItem={handleDecrementItem}
+          onUpdateItemNote={handleUpdateItemNote}
+        />
+      ) : (
+        <div className="flex flex-col h-screen bg-gray-900 text-white" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+          <header className="flex-shrink-0 p-4 flex justify-between items-center bg-gray-800 border-b border-gray-700 shadow-md z-10">
+            <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+              Sala Mamazzita
+            </h1>
+            <button 
+              onClick={() => onNavigate('productos')} 
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105"
             >
-              {roomOrder.map((roomId) => (
-                <div key={roomId} className="w-full flex-shrink-0 h-full">
-                  <TableLayout
-                    tables={layouts[roomId] || []}
-                    isEditMode={isEditMode}
-                    onTableDragStart={handleTableDragStart}
-                    onDeleteTable={requestDeleteTable}
-                    isChangingTableMode={isChangingTableMode}
-                    sourceTableId={sourceTableForChange?.tableId ?? null}
-                    onTableClick={handleTableClick}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+              <CogIcon />
+              <span className="hidden sm:inline">Productos</span>
+            </button>
+          </header>
 
-      <footer className="flex-shrink-0 z-30 bg-gray-900/80 backdrop-blur-sm p-4 border-t border-gray-700">
-        <div className="container mx-auto flex flex-col items-center gap-3">
-          {isChangingTableMode && (
-            <p className="text-lg font-semibold text-yellow-400 animate-pulse">
-              {sourceTableForChange
-                ? 'Seleccione la mesa LIBRE de destino'
-                : 'Seleccione la mesa de ORIGEN que desea cambiar'}
-            </p>
-          )}
-          <div className="flex justify-center items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <span className={`font-semibold text-sm sm:text-base ${isEditMode ? 'text-purple-400' : 'text-gray-500'}`}>Modo Edición</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={isEditMode} onChange={() => { setIsEditMode(!isEditMode); cancelChangeTable(); }} className="sr-only peer" />
-                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-purple-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-              </label>
+          <div className="flex-grow overflow-hidden flex flex-col">
+            <div className="text-center py-2 flex-shrink-0">
+              <div>
+                  <h2 className="text-2xl font-semibold uppercase tracking-widest text-gray-300">{currentRoomId}</h2>
+                  <div className="flex justify-center gap-2 mt-2">
+                      {roomOrder.map((room, index) => (
+                          <div key={room} onClick={() => setCurrentRoomIndex(index)} className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${index === currentRoomIndex ? 'bg-purple-400 scale-125' : 'bg-gray-600'}`}></div>
+                      ))}
+                  </div>
+              </div>
             </div>
-            {isEditMode && (
-                <>
-                  <button 
-                      onClick={() => { setIsChangingTableMode(current => !current); setSourceTableForChange(null); }}
-                      className={`font-bold py-1.5 px-3 text-sm sm:py-2 sm:px-4 sm:text-base rounded-md shadow-lg transition-all transform hover:scale-105 ${isChangingTableMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-yellow-900'}`}
-                  >
-                      {isChangingTableMode ? 'Cancelar Cambio' : 'Cambiar Mesa'}
-                  </button>
-                  <button onClick={handleRestoreLayout} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 text-sm sm:py-2 sm:px-4 sm:text-base rounded-md shadow-lg transition-transform transform hover:scale-105">
-                      Restaurar
-                  </button>
-                </>
-              )}
+          
+            <div className="flex-grow container mx-auto w-full relative" ref={layoutRef}>
+              <div className="absolute inset-0">
+                <div
+                  className="flex transition-transform duration-500 ease-in-out h-full"
+                  style={{ transform: `translateX(-${currentRoomIndex * 100}%)` }}
+                >
+                  {roomOrder.map((roomId) => (
+                    <div key={roomId} className="w-full flex-shrink-0 h-full">
+                      <TableLayout
+                        tables={layouts[roomId] || []}
+                        isEditMode={isEditMode}
+                        onTableDragStart={handleTableDragStart}
+                        onDeleteTable={requestDeleteTable}
+                        isChangingTableMode={isChangingTableMode}
+                        sourceTableId={sourceTableForChange?.tableId ?? null}
+                        onTableClick={handleTableClick}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
+
+          <footer className="flex-shrink-0 z-30 bg-gray-900/80 backdrop-blur-sm p-4 border-t border-gray-700">
+            <div className="container mx-auto flex flex-col items-center gap-3">
+              {isChangingTableMode && (
+                <p className="text-lg font-semibold text-yellow-400 animate-pulse">
+                  {sourceTableForChange
+                    ? 'Seleccione la mesa LIBRE de destino'
+                    : 'Seleccione la mesa de ORIGEN que desea cambiar'}
+                </p>
+              )}
+              <div className="flex justify-center items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2">
+                  <span className={`font-semibold text-sm sm:text-base ${isEditMode ? 'text-purple-400' : 'text-gray-500'}`}>Modo Edición</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={isEditMode} onChange={() => { setIsEditMode(!isEditMode); cancelChangeTable(); }} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-purple-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+                {isEditMode && (
+                    <>
+                      <button 
+                          onClick={() => { setIsChangingTableMode(current => !current); setSourceTableForChange(null); }}
+                          className={`font-bold py-1.5 px-3 text-sm sm:py-2 sm:px-4 sm:text-base rounded-md shadow-lg transition-all transform hover:scale-105 ${isChangingTableMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-yellow-900'}`}
+                      >
+                          {isChangingTableMode ? 'Cancelar Cambio' : 'Cambiar Mesa'}
+                      </button>
+                      <button onClick={handleRestoreLayout} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 text-sm sm:py-2 sm:px-4 sm:text-base rounded-md shadow-lg transition-transform transform hover:scale-105">
+                          Restaurar
+                      </button>
+                    </>
+                  )}
+              </div>
+            </div>
+          </footer>
         </div>
-      </footer>
-    </div>
+      )}
+    </>
   );
 }
 

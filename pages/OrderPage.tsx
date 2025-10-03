@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, OrderItem, TableStatus, Product } from '../types';
 import NoteModal from '../components/NoteModal';
-import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon, DisketteIcon, BellIcon, PrinterIcon, XCircleIcon, ChevronLeftIcon } from '../components/icons';
+import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon, DisketteIcon, BellIcon, PrinterIcon, XCircleIcon, ChevronLeftIcon, ListBulletIcon } from '../components/icons';
 
 interface OrderPageProps {
   table: Table;
@@ -408,57 +409,59 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
 
         <footer className="p-4 border-t border-gray-700 space-y-3 bg-gray-800/50 backdrop-blur-sm sticky bottom-0">
           <div className="container mx-auto max-w-3xl">
-              <div className="flex justify-between items-center text-right mb-3">
+              <div className="flex justify-between items-center text-right mb-3 gap-4">
                 <button
-                onClick={() => setIsSummaryView(prev => !prev)}
-                disabled={table.order.length === 0}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={onClose}
+                  disabled={!hasPendingItems}
+                  className="flex-grow px-6 py-3 bg-yellow-500 hover:bg-yellow-600 rounded-lg font-bold text-yellow-900 transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+                  aria-label="Guardar y Salir"
                 >
-                {isSummaryView ? 'Ver Detalle' : 'Resumen'}
+                  <DisketteIcon />
+                  <span className="uppercase tracking-wider">Guardar</span>
                 </button>
-                <div>
-                <span className="text-lg text-gray-400 mr-2">Total:</span>
-                <span className="text-2xl font-bold text-white">{totalAmount.toFixed(2)} €</span>
+                <div className="flex-shrink-0">
+                  <span className="text-lg text-gray-400 mr-2">Total:</span>
+                  <span className="text-2xl font-bold text-white">{totalAmount.toFixed(2)} €</span>
                 </div>
-            </div>
-            <div className="grid grid-cols-4 gap-3">
-                <button
-                onClick={onClose}
-                disabled={!hasPendingItems}
-                className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-yellow-500 hover:bg-yellow-600 text-yellow-900"
-                aria-label="Guardar y Salir"
-                >
-                <DisketteIcon />
-                <span className="text-xs tracking-wider uppercase">Guardar</span>
-                </button>
-                <button
-                onClick={onCommandAndClose}
-                disabled={!hasPendingItems}
-                className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-green-500 hover:bg-green-600 text-white"
-                aria-label="Comandar Todo"
-                >
-                <BellIcon />
-                <span className="text-xs tracking-wider uppercase">Comandar</span>
-                </button>
-                <button
-                onClick={onPrintBill}
-                disabled={hasPendingItems || table.order.length === 0}
-                className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-blue-500 hover:bg-blue-600 text-white"
-                aria-label="Imprimir Cuenta"
-                >
-                <PrinterIcon />
-                <span className="text-xs tracking-wider uppercase">Imprimir</span>
-                </button>
-                <button
-                onClick={onCloseTable}
-                disabled={table.status !== TableStatus.Billed && table.order.length > 0}
-                className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-red-600 hover:bg-red-700 text-white"
-                aria-label="Cerrar Mesa"
-                >
-                <XCircleIcon />
-                <span className="text-xs tracking-wider uppercase">Cerrar</span>
-                </button>
-            </div>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                  <button
+                    onClick={() => setIsSummaryView(prev => !prev)}
+                    disabled={table.order.length === 0}
+                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-indigo-500 hover:bg-indigo-600 text-white"
+                    aria-label={isSummaryView ? 'Ver Detalle' : 'Ver Resumen'}
+                  >
+                    <ListBulletIcon />
+                    <span className="text-xs tracking-wider uppercase">{isSummaryView ? 'Detalle' : 'Resumen'}</span>
+                  </button>
+                  <button
+                    onClick={onCommandAndClose}
+                    disabled={!hasPendingItems}
+                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-green-500 hover:bg-green-600 text-white"
+                    aria-label="Comandar Todo"
+                  >
+                    <BellIcon />
+                    <span className="text-xs tracking-wider uppercase">Comandar</span>
+                  </button>
+                  <button
+                    onClick={onPrintBill}
+                    disabled={hasPendingItems || table.order.length === 0}
+                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-blue-500 hover:bg-blue-600 text-white"
+                    aria-label="Imprimir Cuenta"
+                  >
+                    <PrinterIcon />
+                    <span className="text-xs tracking-wider uppercase">Imprimir</span>
+                  </button>
+                  <button
+                    onClick={onCloseTable}
+                    disabled={table.status !== TableStatus.Billed && table.order.length > 0}
+                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-red-600 hover:bg-red-700 text-white"
+                    aria-label="Cerrar Mesa"
+                  >
+                    <XCircleIcon />
+                    <span className="text-xs tracking-wider uppercase">Cerrar</span>
+                  </button>
+              </div>
           </div>
         </footer>
     </div>

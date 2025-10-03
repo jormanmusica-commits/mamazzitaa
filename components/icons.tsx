@@ -152,3 +152,16 @@ export const CogIcon: React.FC = () => (
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
 );
+
+export const ListBulletIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+  </svg>
+);
+
+export const BellIconSmall: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.86 4.903a2.25 2.25 0 00-3.72 0M2.25 9.75h19.5M3.75 9.75c0 4.142 3.358 7.5 7.5 7.5s7.5-3.358 7.5-7.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.25v.75" />
+    </svg>
+);
