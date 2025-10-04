@@ -1,9 +1,10 @@
+
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { Table, TableStatus, OrderItem, Product } from '../types';
 import TableLayout from '../components/TableLayout';
 import OrderPage from './OrderPage';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { CogIcon } from '../components/icons';
+import { CogIcon, StarIcon } from '../components/icons';
 
 const initialLayouts: Record<string, Table[]> = {
   principal: [
@@ -43,6 +44,8 @@ const initialLayouts: Record<string, Table[]> = {
 };
 
 const LAYOUTS_STORAGE_KEY = 'mamazzitaa-layouts';
+const DEFAULT_ROOM_KEY = 'mamazzitaa-default-room';
+
 
 interface SalaPageProps {
   products: Product[];
@@ -66,6 +69,9 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
     return initialLayouts;
   });
 
+  const roomOrder = useMemo(() => ['principal', 'terraza'], []);
+  const [defaultRoomId, setDefaultRoomId] = useState<string>(() => localStorage.getItem(DEFAULT_ROOM_KEY) || roomOrder[0]);
+
   useEffect(() => {
     try {
       localStorage.setItem(LAYOUTS_STORAGE_KEY, JSON.stringify(layouts));
@@ -74,8 +80,15 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
     }
   }, [layouts]);
 
-  const roomOrder = useMemo(() => ['principal', 'terraza'], []);
-  const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
+  useEffect(() => {
+    localStorage.setItem(DEFAULT_ROOM_KEY, defaultRoomId);
+  }, [defaultRoomId]);
+
+
+  const [currentRoomIndex, setCurrentRoomIndex] = useState(() => {
+    const initialIndex = roomOrder.indexOf(defaultRoomId);
+    return initialIndex > -1 ? initialIndex : 0;
+  });
   const currentRoomId = roomOrder[currentRoomIndex];
 
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
@@ -110,7 +123,6 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
     const tableIds = new Set<number>();
     const now = currentTime;
     
-    // Fix: Explicitly type the 'table' parameter to resolve type inference issues where properties on 'table' were not being recognized.
     Object.values(layouts).flat().forEach((table: Table) => {
         if (table.status === TableStatus.Pending) {
             const hasOldPendingItem = table.order.some(item => 
@@ -547,6 +559,11 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
       setSelectedTableId(table.id);
     }
   };
+  
+  const handleSetDefaultRoom = () => {
+    setDefaultRoomId(currentRoomId);
+  };
+
 
   useEffect(() => {
     if (draggingState) {
@@ -613,9 +630,14 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
             <div className="text-center py-2 flex-shrink-0">
               <div>
                   <h2 className="text-2xl font-semibold uppercase tracking-widest text-gray-300">{currentRoomId}</h2>
-                  <div className="flex justify-center gap-2 mt-2">
+                  <div className="flex justify-center gap-3 mt-2">
                       {roomOrder.map((room, index) => (
-                          <div key={room} onClick={() => setCurrentRoomIndex(index)} className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${index === currentRoomIndex ? 'bg-purple-400 scale-125' : 'bg-gray-600'}`}></div>
+                          <div key={room} className="relative">
+                            {room === defaultRoomId && (
+                              <StarIcon className="absolute -top-1.5 -right-1.5 h-4 w-4 text-yellow-400" />
+                            )}
+                            <div onClick={() => setCurrentRoomIndex(index)} className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${index === currentRoomIndex ? 'bg-purple-400 scale-125' : 'bg-gray-600'}`}></div>
+                          </div>
                       ))}
                   </div>
               </div>
@@ -655,7 +677,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
                     : 'Seleccione la mesa de ORIGEN que desea cambiar'}
                 </p>
               )}
-              <div className="flex justify-center items-center gap-2 sm:gap-4">
+              <div className="flex justify-center items-center gap-2 sm:gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className={`font-semibold text-sm sm:text-base ${isEditMode ? 'text-purple-400' : 'text-gray-500'}`}>Modo Edición</span>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -670,6 +692,13 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
                           className={`font-bold py-1.5 px-3 text-sm sm:py-2 sm:px-4 sm:text-base rounded-md shadow-lg transition-all transform hover:scale-105 ${isChangingTableMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-yellow-900'}`}
                       >
                           {isChangingTableMode ? 'Cancelar Cambio' : 'Cambiar Mesa'}
+                      </button>
+                      <button 
+                          onClick={handleSetDefaultRoom}
+                          disabled={defaultRoomId === currentRoomId}
+                          className="font-bold py-1.5 px-3 text-sm sm:py-2 sm:px-4 sm:text-base rounded-md shadow-lg transition-transform transform hover:scale-105 bg-gray-600 hover:bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                      >
+                          Fijar Sala
                       </button>
                       <button onClick={handleRestoreLayout} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 text-sm sm:py-2 sm:px-4 sm:text-base rounded-md shadow-lg transition-transform transform hover:scale-105">
                           Restaurar
