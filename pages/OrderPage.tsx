@@ -53,6 +53,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
 
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const MIN_SWIPE_DISTANCE = 100;
+  const isSearching = filterQuery.trim() !== '';
 
   useEffect(() => {
     if (table.order.length > 0) {
@@ -241,8 +242,8 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
   return (
     <div 
         className="flex flex-col h-screen bg-gray-900 text-white"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={!isSearching ? handleTouchStart : undefined}
+        onTouchEnd={!isSearching ? handleTouchEnd : undefined}
     >
         <style>{`
             @keyframes slide-out-to-left {
@@ -289,52 +290,54 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
 
         <main className="flex-grow overflow-y-auto">
             <div className="p-4 sm:p-6 container mx-auto max-w-3xl">
-                <div className="flex justify-between items-center mb-6">
-                    <div className="relative" ref={guestSelectorRef}>
-                        <button 
-                            type="button" 
-                            onClick={() => setIsGuestSelectorOpen(prev => !prev)}
-                            className="flex items-baseline gap-2 rounded-lg px-3 py-1 hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            aria-haspopup="true"
-                            aria-expanded={isGuestSelectorOpen}
-                            aria-label={`Comensal activo ${activeGuest}, haga clic para cambiar`}
-                        >
-                            <span className="text-sm font-bold text-purple-300 uppercase">
-                                Comensal Activo
-                            </span>
-                            <span className="text-2xl font-extrabold text-white leading-none">
-                                {activeGuest}
-                            </span>
-                        </button>
-                        {isGuestSelectorOpen && (
-                            <div className="absolute z-20 top-full mt-2 bg-gray-600 border border-gray-500 rounded-md shadow-lg min-w-[150px]">
-                                <ul className="py-1 max-h-48 overflow-y-auto">
-                                    {allGuestNumbers.map(guestNum => (
-                                        <li key={guestNum}>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    handleSetActiveGuest(guestNum);
-                                                    setIsGuestSelectorOpen(false);
-                                                }}
-                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${activeGuest === guestNum ? 'bg-purple-600 text-white' : 'text-gray-200 hover:bg-purple-500'}`}
-                                            >
-                                                Comensal {guestNum}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                    <button 
-                        type="button" 
-                        onClick={handleAddNewGuest}
-                        className="flex items-center gap-2 text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-md transition-colors"
-                    >
-                        <UserIcon /> + Comensal
-                    </button>
-                </div>
+                {!isSearching && (
+                  <div className="flex justify-between items-center mb-6">
+                      <div className="relative" ref={guestSelectorRef}>
+                          <button 
+                              type="button" 
+                              onClick={() => setIsGuestSelectorOpen(prev => !prev)}
+                              className="flex items-baseline gap-2 rounded-lg px-3 py-1 hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              aria-haspopup="true"
+                              aria-expanded={isGuestSelectorOpen}
+                              aria-label={`Comensal activo ${activeGuest}, haga clic para cambiar`}
+                          >
+                              <span className="text-sm font-bold text-purple-300 uppercase">
+                                  Comensal Activo
+                              </span>
+                              <span className="text-2xl font-extrabold text-white leading-none">
+                                  {activeGuest}
+                              </span>
+                          </button>
+                          {isGuestSelectorOpen && (
+                              <div className="absolute z-20 top-full mt-2 bg-gray-600 border border-gray-500 rounded-md shadow-lg min-w-[150px]">
+                                  <ul className="py-1 max-h-48 overflow-y-auto">
+                                      {allGuestNumbers.map(guestNum => (
+                                          <li key={guestNum}>
+                                              <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                      handleSetActiveGuest(guestNum);
+                                                      setIsGuestSelectorOpen(false);
+                                                  }}
+                                                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${activeGuest === guestNum ? 'bg-purple-600 text-white' : 'text-gray-200 hover:bg-purple-500'}`}
+                                              >
+                                                  Comensal {guestNum}
+                                              </button>
+                                          </li>
+                                      ))}
+                                  </ul>
+                              </div>
+                          )}
+                      </div>
+                      <button 
+                          type="button" 
+                          onClick={handleAddNewGuest}
+                          className="flex items-center gap-2 text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-md transition-colors"
+                      >
+                          <UserIcon /> + Comensal
+                      </button>
+                  </div>
+                )}
 
                 <div className="relative mb-6">
                     <input
@@ -348,262 +351,266 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                         <SearchIcon />
                     </div>
                 </div>
-
-                {filterQuery.trim() !== '' && (
-                <div className="mb-6">
-                    {filteredProducts.length > 0 ? (
-                        <>
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="flex-1 text-left text-lg font-semibold text-purple-300 uppercase tracking-wider">Resultados de la búsqueda</h3>
-                                <button
-                                    onClick={() => {
-                                        setFilteredProducts([]);
-                                        setFilterQuery('');
-                                    }}
-                                    className="text-gray-400 hover:text-white transition-colors"
-                                    aria-label="Cerrar búsqueda"
-                                >
-                                    <CloseIcon />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
-                                {filteredProducts.map((product) => {
-                                    const nameParts = product.name.split(' - ');
-                                    const title = nameParts[0];
-                                    const description = nameParts.slice(1).join(' - ');
-                                    return (
-                                        <button
-                                          key={product.id}
-                                          onClick={() => product.available !== false && handleSelectProduct(product)}
-                                          disabled={product.available === false}
-                                          className={`w-full text-left p-3 bg-gray-900/50 rounded-md border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                                              product.available === false
-                                              ? 'border-gray-700 opacity-50 cursor-not-allowed'
-                                              : 'hover:bg-purple-800/40 border-gray-700 hover:border-purple-600'
-                                          }`}
-                                        >
-                                          <div className="flex items-center justify-between">
-                                              <div>
-                                                  <p className="font-bold text-white">{title}</p>
-                                                  {description && (
-                                                      <p className="text-sm text-gray-300 mt-1">{description}</p>
-                                                  )}
-                                              </div>
-                                              {product.available === false ? (
-                                                  <span className="text-red-500"><XCircleIconSolid /></span>
-                                              ) : (
-                                                  <span className="text-green-500"><CheckCircleIconSolid /></span>
-                                              )}
-                                          </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </>
-                    ) : (
-                        <div className="text-center p-4 bg-gray-900/50 border border-gray-700 rounded-md">
-                            <p className="text-gray-400 mb-3">No se encontraron productos para "<span className="font-bold text-gray-300">{filterQuery}</span>"</p>
-                            <button
-                                onClick={() => handleSelectProduct({ 
-                                    id: `custom_${Date.now()}`, 
-                                    name: filterQuery, 
-                                    price: 0, 
-                                    category: 'custom' 
-                                })}
-                                className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105"
-                            >
-                                <PlusIcon />
-                                Añadir como nuevo artículo
-                            </button>
-                        </div>
-                    )}
-                </div>
-                )}
                 
-                {isSummaryView ? (
-                    <div>
-                        <h3 className="text-xl font-bold text-center mb-4 text-purple-300 uppercase tracking-wider">Resumen del Pedido</h3>
-                        <div className="space-y-2 bg-gray-800 rounded-lg p-4">
-                            {orderSummary.length > 0 ? (
-                                orderSummary.map(item => (
-                                    <div key={item.name} className="flex justify-start items-center text-lg p-2 border-b border-gray-700/50 last:border-b-0">
-                                        <span className="font-bold text-purple-300 w-12 text-right mr-4">{item.quantity} x</span>
-                                        <span className="font-medium text-white">{getDisplayName(item.name)}</span>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-center text-gray-500 py-8">Aún no hay artículos en este pedido.</p>
-                            )}
-                        </div>
-                    </div>
+                {isSearching ? (
+                  <div className="mb-6">
+                      {filteredProducts.length > 0 ? (
+                          <>
+                              <div className="flex justify-between items-center mb-2">
+                                  <h3 className="flex-1 text-left text-lg font-semibold text-purple-300 uppercase tracking-wider">Resultados de la búsqueda</h3>
+                                  <button
+                                      onClick={() => {
+                                          setFilteredProducts([]);
+                                          setFilterQuery('');
+                                      }}
+                                      className="text-gray-400 hover:text-white transition-colors"
+                                      aria-label="Cerrar búsqueda"
+                                  >
+                                      <CloseIcon />
+                                  </button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {filteredProducts.map((product) => {
+                                      const nameParts = product.name.split(' - ');
+                                      const title = nameParts[0];
+                                      const description = nameParts.slice(1).join(' - ');
+                                      return (
+                                          <button
+                                            key={product.id}
+                                            onClick={() => product.available !== false && handleSelectProduct(product)}
+                                            disabled={product.available === false}
+                                            className={`w-full text-left p-3 bg-gray-900/50 rounded-md border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                                                product.available === false
+                                                ? 'border-gray-700 opacity-50 cursor-not-allowed'
+                                                : 'hover:bg-purple-800/40 border-gray-700 hover:border-purple-600'
+                                            }`}
+                                          >
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="font-bold text-white">{title}</p>
+                                                    {description && (
+                                                        <p className="text-sm text-gray-300 mt-1">{description}</p>
+                                                    )}
+                                                </div>
+                                                {product.available === false ? (
+                                                    <span className="text-red-500"><XCircleIconSolid /></span>
+                                                ) : (
+                                                    <span className="text-green-500"><CheckCircleIconSolid /></span>
+                                                )}
+                                            </div>
+                                          </button>
+                                      );
+                                  })}
+                              </div>
+                          </>
+                      ) : (
+                          <div className="text-center p-4 bg-gray-900/50 border border-gray-700 rounded-md">
+                              <p className="text-gray-400 mb-3">No se encontraron productos para "<span className="font-bold text-gray-300">{filterQuery}</span>"</p>
+                              <button
+                                  onClick={() => handleSelectProduct({ 
+                                      id: `custom_${Date.now()}`, 
+                                      name: filterQuery, 
+                                      price: 0, 
+                                      category: 'custom' 
+                                  })}
+                                  className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105"
+                              >
+                                  <PlusIcon />
+                                  Añadir como nuevo artículo
+                              </button>
+                          </div>
+                      )}
+                  </div>
                 ) : (
-                <div className="space-y-4">
-                    {table.order.length > 0 ? (
-                        (Object.entries(groupedOrder) as [string, OrderItem[]][])
-                        .sort(([guestA], [guestB]) => Number(guestA) - Number(guestB))
-                        .map(([guest, items]) => {
-                        const guestSubtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                        return (
-                            <div key={guest} className="bg-gray-800 rounded-lg p-3">
-                                <div 
-                                    onClick={() => handleSetActiveGuest(Number(guest))}
-                                    className={`relative flex justify-center items-center border-b border-gray-700 pb-2 mb-2 cursor-pointer rounded-t-md -m-3 p-3 mb-2 transition-colors ${activeGuest === Number(guest) ? 'bg-purple-500/20' : 'hover:bg-gray-700/50'}`}
-                                    role="button"
-                                    aria-label={`Activar Comensal ${guest}`}
-                                >
-                                    <h3 className="font-bold text-lg text-purple-300">Comensal {guest}</h3>
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-semibold text-gray-300">{guestSubtotal.toFixed(2)} €</span>
-                                </div>
-                                <div className="space-y-2">
-                                    {[...items].sort((a, b) => {
-                                        const parse = (id: string) => id.split('.').map(s => parseInt(s, 10));
-                                        const partsA = parse(a.id);
-                                        const partsB = parse(b.id);
-                                        
-                                        if (partsB[0] !== partsA[0]) {
-                                            return partsB[0] - partsA[0];
-                                        }
-                                        
-                                        const subA = partsA[1] || 0;
-                                        const subB = partsB[1] || 0;
-                                        
-                                        return subB - subA;
-                                    }).map(item => (
-                                    <div
-                                        key={item.id}
-                                        className={`relative rounded-lg overflow-hidden ${deletingItemId === item.id ? 'animate-slide-out' : ''}`}
-                                        onAnimationEnd={() => handleAnimationEnd(item)}
-                                    >
-                                        <div className="absolute inset-y-0 right-0 flex flex-col items-center justify-center bg-red-600 text-white w-20 pointer-events-none">
-                                            <TrashIcon />
-                                            <span className="text-xs font-bold mt-1">Eliminar</span>
+                  <>
+                    {isSummaryView ? (
+                        <div>
+                            <h3 className="text-xl font-bold text-center mb-4 text-purple-300 uppercase tracking-wider">Resumen del Pedido</h3>
+                            <div className="space-y-2 bg-gray-800 rounded-lg p-4">
+                                {orderSummary.length > 0 ? (
+                                    orderSummary.map(item => (
+                                        <div key={item.name} className="flex justify-start items-center text-lg p-2 border-b border-gray-700/50 last:border-b-0">
+                                            <span className="font-bold text-purple-300 w-12 text-right mr-4">{item.quantity} x</span>
+                                            <span className="font-medium text-white">{getDisplayName(item.name)}</span>
                                         </div>
-                                        <div
-                                          style={{
-                                              transform: `translateX(${swipeState.id === item.id ? swipeState.x : 0}px)`,
-                                              transition: swipeState.id === null && !deletingItemId ? 'transform 0.3s ease-out' : 'none'
-                                          }}
-                                          onTouchStart={(e) => handleItemTouchStart(e, item.id)}
-                                          onTouchMove={(e) => handleItemTouchMove(e, item.id)}
-                                          onTouchEnd={() => handleItemTouchEnd(item)}
-                                          className={`relative z-10 p-3 rounded-lg bg-gray-700 border-l-4 ${item.status === 'pending' ? 'border-yellow-500' : 'border-green-500'}`}
-                                        >
-                                          <div className="flex items-start justify-between">
-                                            <div 
-                                              className="flex-grow mr-2 cursor-pointer"
-                                              onDoubleClick={() => setNoteModalItem(item)}
-                                            >
-                                              <p className="font-semibold text-white mb-1">{item.quantity} x {getDisplayName(item.name)}</p>
-                                              <div className="text-sm text-gray-400">
-                                                <span>{item.price.toFixed(2)} €</span>
-                                                <span className="font-bold text-gray-200 ml-4">Total: {(item.quantity * item.price).toFixed(2)} €</span>
-                                              </div>
-                                              {item.status === 'pending' && (
-                                                  <span className="text-xs text-yellow-300 font-medium mt-1 block">
-                                                      {formatTimeAgo(item.timestamp, currentTime)}
-                                                  </span>
-                                              )}
-                                              {item.note && (
-                                                <p className="text-sm text-purple-300 italic pt-2 pl-1 border-l-2 border-purple-400/50 ml-1 mt-2">{item.note}</p>
-                                              )}
-                                            </div>
-
-                                            <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${item.status === 'pending' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>
-                                                        {item.status === 'pending' ? 'Pendiente' : 'Comandado'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => onDecrementItem(item.id)}
-                                                        className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
-                                                        aria-label={`Quitar uno de ${item.name}`}
-                                                    >
-                                                        <MinusIcon />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => onAddItem({ name: item.name, quantity: 1, price: item.price, note: item.note, guest: item.guest }, item.id)}
-                                                        className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
-                                                        aria-label={`Añadir uno más de ${item.name}`}
-                                                    >
-                                                        <PlusIcon />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                    </div>
-                                    ))}
-                                </div>
+                                    ))
+                                ) : (
+                                    <p className="text-center text-gray-500 py-8">Aún no hay artículos en este pedido.</p>
+                                )}
                             </div>
-                        );
-                        })
+                        </div>
                     ) : (
-                    <p className="text-center text-gray-500 py-8">Aún no hay artículos en este pedido.</p>
+                    <div className="space-y-4">
+                        {table.order.length > 0 ? (
+                            (Object.entries(groupedOrder) as [string, OrderItem[]][])
+                            .sort(([guestA], [guestB]) => Number(guestA) - Number(guestB))
+                            .map(([guest, items]) => {
+                            const guestSubtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                            return (
+                                <div key={guest} className="bg-gray-800 rounded-lg p-3">
+                                    <div 
+                                        onClick={() => handleSetActiveGuest(Number(guest))}
+                                        className={`relative flex justify-center items-center border-b border-gray-700 pb-2 mb-2 cursor-pointer rounded-t-md -m-3 p-3 mb-2 transition-colors ${activeGuest === Number(guest) ? 'bg-purple-500/20' : 'hover:bg-gray-700/50'}`}
+                                        role="button"
+                                        aria-label={`Activar Comensal ${guest}`}
+                                    >
+                                        <h3 className="font-bold text-lg text-purple-300">Comensal {guest}</h3>
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-semibold text-gray-300">{guestSubtotal.toFixed(2)} €</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {[...items].sort((a, b) => {
+                                            const parse = (id: string) => id.split('.').map(s => parseInt(s, 10));
+                                            const partsA = parse(a.id);
+                                            const partsB = parse(b.id);
+                                            
+                                            if (partsB[0] !== partsA[0]) {
+                                                return partsB[0] - partsA[0];
+                                            }
+                                            
+                                            const subA = partsA[1] || 0;
+                                            const subB = partsB[1] || 0;
+                                            
+                                            return subB - subA;
+                                        }).map(item => (
+                                        <div
+                                            key={item.id}
+                                            className={`relative rounded-lg overflow-hidden ${deletingItemId === item.id ? 'animate-slide-out' : ''}`}
+                                            onAnimationEnd={() => handleAnimationEnd(item)}
+                                        >
+                                            <div className="absolute inset-y-0 right-0 flex flex-col items-center justify-center bg-red-600 text-white w-20 pointer-events-none">
+                                                <TrashIcon />
+                                                <span className="text-xs font-bold mt-1">Eliminar</span>
+                                            </div>
+                                            <div
+                                              style={{
+                                                  transform: `translateX(${swipeState.id === item.id ? swipeState.x : 0}px)`,
+                                                  transition: swipeState.id === null && !deletingItemId ? 'transform 0.3s ease-out' : 'none'
+                                              }}
+                                              onTouchStart={(e) => handleItemTouchStart(e, item.id)}
+                                              onTouchMove={(e) => handleItemTouchMove(e, item.id)}
+                                              onTouchEnd={() => handleItemTouchEnd(item)}
+                                              className={`relative z-10 p-3 rounded-lg bg-gray-700 border-l-4 ${item.status === 'pending' ? 'border-yellow-500' : 'border-green-500'}`}
+                                            >
+                                              <div className="flex items-start justify-between">
+                                                <div 
+                                                  className="flex-grow mr-2 cursor-pointer"
+                                                  onDoubleClick={() => setNoteModalItem(item)}
+                                                >
+                                                  <p className="font-semibold text-white mb-1">{item.quantity} x {getDisplayName(item.name)}</p>
+                                                  <div className="text-sm text-gray-400">
+                                                    <span>{item.price.toFixed(2)} €</span>
+                                                    <span className="font-bold text-gray-200 ml-4">Total: {(item.quantity * item.price).toFixed(2)} €</span>
+                                                  </div>
+                                                  {item.status === 'pending' && (
+                                                      <span className="text-xs text-yellow-300 font-medium mt-1 block">
+                                                          {formatTimeAgo(item.timestamp, currentTime)}
+                                                      </span>
+                                                  )}
+                                                  {item.note && (
+                                                    <p className="text-sm text-purple-300 italic pt-2 pl-1 border-l-2 border-purple-400/50 ml-1 mt-2">{item.note}</p>
+                                                  )}
+                                                </div>
+    
+                                                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${item.status === 'pending' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>
+                                                            {item.status === 'pending' ? 'Pendiente' : 'Comandado'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => onDecrementItem(item.id)}
+                                                            className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
+                                                            aria-label={`Quitar uno de ${item.name}`}
+                                                        >
+                                                            <MinusIcon />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => onAddItem({ name: item.name, quantity: 1, price: item.price, note: item.note, guest: item.guest }, item.id)}
+                                                            className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
+                                                            aria-label={`Añadir uno más de ${item.name}`}
+                                                        >
+                                                            <PlusIcon />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                        </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                            })
+                        ) : (
+                        <p className="text-center text-gray-500 py-8">Aún no hay artículos en este pedido.</p>
+                        )}
+                    </div>
                     )}
-                </div>
+                  </>
                 )}
             </div>
         </main>
-
-        <footer className="p-4 border-t border-gray-700 space-y-3 bg-gray-800/50 backdrop-blur-sm sticky bottom-0">
-          <div className="container mx-auto max-w-3xl">
-              <div className="flex justify-between items-center text-right mb-3 gap-4">
-                <button
-                  onClick={onClose}
-                  disabled={!hasPendingItems}
-                  className="flex-grow px-6 py-3 bg-yellow-500 hover:bg-yellow-600 rounded-lg font-bold text-yellow-900 transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
-                  aria-label="Guardar y Salir"
-                >
-                  <DisketteIcon />
-                  <span className="uppercase tracking-wider">Guardar</span>
-                </button>
-                <div className="flex-shrink-0">
-                  <span className="text-lg text-gray-400 mr-2">Total:</span>
-                  <span className="text-2xl font-bold text-white">{totalAmount.toFixed(2)} €</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-3">
+        
+        {!isSearching && (
+          <footer className="p-4 border-t border-gray-700 space-y-3 bg-gray-800/50 backdrop-blur-sm sticky bottom-0">
+            <div className="container mx-auto max-w-3xl">
+                <div className="flex justify-between items-center text-right mb-3 gap-4">
                   <button
-                    onClick={() => setIsSummaryView(prev => !prev)}
-                    disabled={table.order.length === 0}
-                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-indigo-500 hover:bg-indigo-600 text-white"
-                    aria-label={isSummaryView ? 'Ver Detalle' : 'Ver Resumen'}
-                  >
-                    <ListBulletIcon />
-                    <span className="text-xs tracking-wider uppercase">{isSummaryView ? 'Detalle' : 'Resumen'}</span>
-                  </button>
-                  <button
-                    onClick={onCommandAndClose}
+                    onClick={onClose}
                     disabled={!hasPendingItems}
-                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-green-500 hover:bg-green-600 text-white"
-                    aria-label="Comandar Todo"
+                    className="flex-grow px-6 py-3 bg-yellow-500 hover:bg-yellow-600 rounded-lg font-bold text-yellow-900 transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+                    aria-label="Guardar y Salir"
                   >
-                    <BellIcon />
-                    <span className="text-xs tracking-wider uppercase">Comandar</span>
+                    <DisketteIcon />
+                    <span className="uppercase tracking-wider">Guardar</span>
                   </button>
-                  <button
-                    onClick={handleShowBill}
-                    disabled={hasPendingItems || table.order.length === 0}
-                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-blue-500 hover:bg-blue-600 text-white"
-                    aria-label="Imprimir Cuenta"
-                  >
-                    <PrinterIcon />
-                    <span className="text-xs tracking-wider uppercase">Imprimir</span>
-                  </button>
-                  <button
-                    onClick={onCloseTable}
-                    disabled={table.status !== TableStatus.Billed && table.order.length > 0}
-                    className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-red-600 hover:bg-red-700 text-white"
-                    aria-label="Cerrar Mesa"
-                  >
-                    <XCircleIcon />
-                    <span className="text-xs tracking-wider uppercase">Cerrar</span>
-                  </button>
-              </div>
-          </div>
-        </footer>
+                  <div className="flex-shrink-0">
+                    <span className="text-lg text-gray-400 mr-2">Total:</span>
+                    <span className="text-2xl font-bold text-white">{totalAmount.toFixed(2)} €</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                    <button
+                      onClick={() => setIsSummaryView(prev => !prev)}
+                      disabled={table.order.length === 0}
+                      className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-indigo-500 hover:bg-indigo-600 text-white"
+                      aria-label={isSummaryView ? 'Ver Detalle' : 'Ver Resumen'}
+                    >
+                      <ListBulletIcon />
+                      <span className="text-xs tracking-wider uppercase">{isSummaryView ? 'Detalle' : 'Resumen'}</span>
+                    </button>
+                    <button
+                      onClick={onCommandAndClose}
+                      disabled={!hasPendingItems}
+                      className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-green-500 hover:bg-green-600 text-white"
+                      aria-label="Comandar Todo"
+                    >
+                      <BellIcon />
+                      <span className="text-xs tracking-wider uppercase">Comandar</span>
+                    </button>
+                    <button
+                      onClick={handleShowBill}
+                      disabled={hasPendingItems || table.order.length === 0}
+                      className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-blue-500 hover:bg-blue-600 text-white"
+                      aria-label="Imprimir Cuenta"
+                    >
+                      <PrinterIcon />
+                      <span className="text-xs tracking-wider uppercase">Imprimir</span>
+                    </button>
+                    <button
+                      onClick={onCloseTable}
+                      disabled={table.status !== TableStatus.Billed && table.order.length > 0}
+                      className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-red-600 hover:bg-red-700 text-white"
+                      aria-label="Cerrar Mesa"
+                    >
+                      <XCircleIcon />
+                      <span className="text-xs tracking-wider uppercase">Cerrar</span>
+                    </button>
+                </div>
+            </div>
+          </footer>
+        )}
     </div>
   );
 };
