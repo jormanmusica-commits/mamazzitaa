@@ -43,13 +43,38 @@ const initialLayouts: Record<string, Table[]> = {
   ],
 };
 
+const LAYOUTS_STORAGE_KEY = 'mamazzitaa-layouts';
+
 interface SalaPageProps {
   products: Product[];
   onNavigate: (page: 'sala' | 'productos') => void;
 }
 
 const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
-  const [layouts, setLayouts] = useState<Record<string, Table[]>>(initialLayouts);
+  const [layouts, setLayouts] = useState<Record<string, Table[]>>(() => {
+    try {
+      const savedLayouts = localStorage.getItem(LAYOUTS_STORAGE_KEY);
+      if (savedLayouts) {
+        const parsedLayouts = JSON.parse(savedLayouts);
+        // Basic validation
+        if (typeof parsedLayouts === 'object' && parsedLayouts !== null && !Array.isArray(parsedLayouts)) {
+          return parsedLayouts;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading layouts from localStorage", error);
+    }
+    return initialLayouts;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LAYOUTS_STORAGE_KEY, JSON.stringify(layouts));
+    } catch (error) {
+      console.error("Error saving layouts to localStorage", error);
+    }
+  }, [layouts]);
+
   const roomOrder = useMemo(() => ['principal', 'terraza'], []);
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
   const currentRoomId = roomOrder[currentRoomIndex];

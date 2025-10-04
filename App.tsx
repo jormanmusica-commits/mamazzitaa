@@ -90,11 +90,28 @@ const initialProducts: Product[] = [
   { id: 'p45', name: 'Americano Coctel - Campari, Vermut Rojo (Dulce), Agua con gas (Soda).', category: 'otros', price: 1 },
 ];
 
+const PRODUCTS_STORAGE_KEY = 'mamazzitaa-products';
 
 function App() {
   const [page, setPage] = useState<'sala' | 'productos'>('sala');
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const savedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      return savedProducts ? JSON.parse(savedProducts) : initialProducts;
+    } catch (error) {
+      console.error('Error loading products from localStorage:', error);
+      return initialProducts;
+    }
+  });
   const [categories] = useState<Category[]>(initialCategories);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    } catch (error) {
+      console.error('Error saving products to localStorage:', error);
+    }
+  }, [products]);
 
   useEffect(() => {
     if (page === 'sala') {
