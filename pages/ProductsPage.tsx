@@ -76,7 +76,21 @@ const ProductsPage: React.FC<ProductsPageProps> = ({ categories, products, onUpd
                           </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-semibold ${product.available !== false ? 'text-green-400' : 'text-red-400'}`}>
+                              {product.available !== false ? 'Disponible' : 'Agotado'}
+                            </span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={product.available !== false} 
+                                onChange={() => onUpdateProduct({ ...product, available: !(product.available !== false) })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-green-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                          </div>
                           <span className="font-semibold text-gray-300">{(product.price ?? 0).toFixed(2)} €</span>
                           <button onClick={() => handleEditClick(product)} className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-600">
                               <PencilIcon />

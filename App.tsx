@@ -17,7 +17,7 @@ const initialCategories: Category[] = [
   { id: 'otros', name: 'Licores & Otros' },
 ];
 
-const initialProducts: Product[] = [
+const initialProducts: Omit<Product, 'available'>[] = [
   // Tequila
   { id: 'p3', name: 'LLORONA - Tequila, Mezcal, Aperol, Mango, Limón.', category: 'tequila', price: 1 },
   { id: 'p8', name: 'SANTA MUERTE - Tequila Reposado, Mezcal, Jamaica, Fresa, Jalapeño.', category: 'tequila', price: 1 },
@@ -90,6 +90,11 @@ const initialProducts: Product[] = [
   { id: 'p45', name: 'Americano Coctel - Campari, Vermut Rojo (Dulce), Agua con gas (Soda).', category: 'otros', price: 1 },
 ];
 
+const initialProductsWithAvailability: Product[] = initialProducts.map(product => ({
+  ...product,
+  available: true,
+}));
+
 const PRODUCTS_STORAGE_KEY = 'mamazzitaa-products';
 
 function App() {
@@ -97,10 +102,18 @@ function App() {
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const savedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
-      return savedProducts ? JSON.parse(savedProducts) : initialProducts;
+      if (savedProducts) {
+        const parsedProducts: Product[] = JSON.parse(savedProducts);
+        // Migration for older data: ensure 'available' property exists.
+        return parsedProducts.map(p => ({
+          ...p,
+          available: p.available === undefined ? true : p.available,
+        }));
+      }
+      return initialProductsWithAvailability;
     } catch (error) {
       console.error('Error loading products from localStorage:', error);
-      return initialProducts;
+      return initialProductsWithAvailability;
     }
   });
   const [categories] = useState<Category[]>(initialCategories);

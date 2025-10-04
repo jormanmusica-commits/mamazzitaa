@@ -4,7 +4,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, OrderItem, TableStatus, Product } from '../types';
 import NoteModal from '../components/NoteModal';
 import BillModal from '../components/BillModal';
-import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon, DisketteIcon, BellIcon, PrinterIcon, XCircleIcon, ChevronLeftIcon, ListBulletIcon } from '../components/icons';
+import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon, DisketteIcon, BellIcon, PrinterIcon, XCircleIcon, ChevronLeftIcon, ListBulletIcon, CheckCircleIconSolid, XCircleIconSolid } from '../components/icons';
 
 interface OrderPageProps {
   table: Table;
@@ -14,7 +14,7 @@ interface OrderPageProps {
   onCommandAndClose: () => void;
   onPrintBill: () => void;
   onCloseTable: () => void;
-  onRequestDeleteItem: (itemId: string, itemName: string) => void;
+  onDeleteItem: (itemId: string) => void;
   onDecrementItem: (itemId: string) => void;
   onUpdateItemNote: (itemId: string, note: string) => void;
 }
@@ -36,7 +36,7 @@ const formatTimeAgo = (timestamp: number, now: number): string => {
 };
 
 
-const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddItem, onCommandAndClose, onPrintBill, onCloseTable, onRequestDeleteItem, onDecrementItem, onUpdateItemNote }) => {
+const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddItem, onCommandAndClose, onPrintBill, onCloseTable, onDeleteItem, onDecrementItem, onUpdateItemNote }) => {
   const [activeGuest, setActiveGuest] = useState(1);
   const [isGuestSelectorOpen, setIsGuestSelectorOpen] = useState(false);
   const [isSummaryView, setIsSummaryView] = useState(false);
@@ -152,7 +152,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
   
   const handleAnimationEnd = (item: OrderItem) => {
     if (deletingItemId === item.id) {
-        onRequestDeleteItem(item.id, item.name);
+        onDeleteItem(item.id);
         setDeletingItemId(null);
         setSwipeState({ id: null, x: 0 });
     }
@@ -372,15 +372,29 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                                     const title = nameParts[0];
                                     const description = nameParts.slice(1).join(' - ');
                                     return (
-                                        <button 
-                                            key={product.id}
-                                            onClick={() => handleSelectProduct(product)} 
-                                            className="w-full text-left p-3 bg-gray-900/50 rounded-md hover:bg-purple-800/40 border border-gray-700 hover:border-purple-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        <button
+                                          key={product.id}
+                                          onClick={() => product.available !== false && handleSelectProduct(product)}
+                                          disabled={product.available === false}
+                                          className={`w-full text-left p-3 bg-gray-900/50 rounded-md border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                                              product.available === false
+                                              ? 'border-gray-700 opacity-50 cursor-not-allowed'
+                                              : 'hover:bg-purple-800/40 border-gray-700 hover:border-purple-600'
+                                          }`}
                                         >
-                                            <p className="font-bold text-white">{title}</p>
-                                            {description && (
-                                                <p className="text-sm text-gray-300 mt-1">{description}</p>
-                                            )}
+                                          <div className="flex items-center justify-between">
+                                              <div>
+                                                  <p className="font-bold text-white">{title}</p>
+                                                  {description && (
+                                                      <p className="text-sm text-gray-300 mt-1">{description}</p>
+                                                  )}
+                                              </div>
+                                              {product.available === false ? (
+                                                  <span className="text-red-500"><XCircleIconSolid /></span>
+                                              ) : (
+                                                  <span className="text-green-500"><CheckCircleIconSolid /></span>
+                                              )}
+                                          </div>
                                         </button>
                                     );
                                 })}

@@ -33,8 +33,8 @@ const initialLayouts: Record<string, Table[]> = {
     { id: 54, name: '54', x: 2, y: 15, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 53, name: '53', x: 18, y: 15, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 52, name: '52', x: 34, y: 15, status: TableStatus.Available, order: [], shape: 'double' },
-    { id: 51, name: '51', x: 62, y: 15, status: TableStatus.Available, order: [], shape: 'square' },
-    { id: 50, name: '50', x: 78, y: 15, status: TableStatus.Available, order: [], shape: 'square' },
+    { id: 51, name: '51', x: 66, y: 15, status: TableStatus.Available, order: [], shape: 'square' },
+    { id: 50, name: '50', x: 82, y: 15, status: TableStatus.Available, order: [], shape: 'square' },
      // Row 2 (40s row, reversed)
     { id: 43, name: '43', x: 10, y: 50, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 42, name: '42', x: 30, y: 50, status: TableStatus.Available, order: [], shape: 'square' },
@@ -389,31 +389,24 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
       }
   };
   
-  const requestDeleteItem = (itemId: string, itemName: string) => {
-    setConfirmation({
-      title: `Eliminar "${itemName}"`,
-      message: '¿Estás seguro de que quieres eliminar este artículo del pedido? Esta acción no se puede deshacer.',
-      onConfirm: () => {
-        if (!selectedTableId) return;
-        const currentTable = layouts[currentRoomId].find(t => t.id === selectedTableId);
-        if (currentTable) {
-            const updatedOrder = currentTable.order.filter(item => item.id !== itemId);
-            const hasPending = updatedOrder.some(item => item.status === 'pending');
-            let newStatus = currentTable.status;
-            
-            if (updatedOrder.length === 0) {
-                newStatus = TableStatus.Available;
-            } else if (!hasPending && (newStatus === TableStatus.Pending || newStatus === TableStatus.Billed)) {
-                newStatus = TableStatus.Ordered;
-            } else if (hasPending && newStatus === TableStatus.Billed) {
-                 newStatus = TableStatus.Pending
-            }
-
-            updateTable(currentRoomId, selectedTableId, { order: updatedOrder, status: newStatus });
+  const handleDeleteItem = (itemId: string) => {
+    if (!selectedTableId) return;
+    const currentTable = layouts[currentRoomId].find(t => t.id === selectedTableId);
+    if (currentTable) {
+        const updatedOrder = currentTable.order.filter(item => item.id !== itemId);
+        const hasPending = updatedOrder.some(item => item.status === 'pending');
+        let newStatus = currentTable.status;
+        
+        if (updatedOrder.length === 0) {
+            newStatus = TableStatus.Available;
+        } else if (!hasPending && (newStatus === TableStatus.Pending || newStatus === TableStatus.Billed)) {
+            newStatus = TableStatus.Ordered;
+        } else if (hasPending && newStatus === TableStatus.Billed) {
+             newStatus = TableStatus.Pending
         }
-        setConfirmation(null);
-      },
-    });
+
+        updateTable(currentRoomId, selectedTableId, { order: updatedOrder, status: newStatus });
+    }
   };
   
   const cancelChangeTable = () => {
@@ -607,7 +600,7 @@ const SalaPage: React.FC<SalaPageProps> = ({ products, onNavigate }) => {
           onCommandAndClose={handleCommandAndClose}
           onPrintBill={handlePrintBill}
           onCloseTable={handleCloseTable}
-          onRequestDeleteItem={requestDeleteItem}
+          onDeleteItem={handleDeleteItem}
           onDecrementItem={handleDecrementItem}
           onUpdateItemNote={handleUpdateItemNote}
         />
