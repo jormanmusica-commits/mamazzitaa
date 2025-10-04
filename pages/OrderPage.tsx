@@ -346,6 +346,10 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                         onChange={handleFilterChange}
                         placeholder="Buscar producto y añadir..."
                         className="w-full bg-gray-700 border border-gray-600 rounded-md pl-10 pr-3 py-2 text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
                     />
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <SearchIcon />
