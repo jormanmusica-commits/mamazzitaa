@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, OrderItem, TableStatus, Product } from '../types';
 import NoteModal from '../components/NoteModal';
@@ -375,7 +376,19 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                         </>
                     ) : (
                         <div className="text-center p-4 bg-gray-900/50 border border-gray-700 rounded-md">
-                            <p className="text-gray-400">No se encontraron productos para "{filterQuery}"</p>
+                            <p className="text-gray-400 mb-3">No se encontraron productos para "<span className="font-bold text-gray-300">{filterQuery}</span>"</p>
+                            <button
+                                onClick={() => handleSelectProduct({ 
+                                    id: `custom_${Date.now()}`, 
+                                    name: filterQuery, 
+                                    price: 0, 
+                                    category: 'custom' 
+                                })}
+                                className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-lg transition-transform transform hover:scale-105"
+                            >
+                                <PlusIcon />
+                                Añadir como nuevo artículo
+                            </button>
                         </div>
                     )}
                 </div>
@@ -459,6 +472,11 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                                                 <span>{item.price.toFixed(2)} €</span>
                                                 <span className="font-bold text-gray-200 ml-4">Total: {(item.quantity * item.price).toFixed(2)} €</span>
                                               </div>
+                                              {item.status === 'pending' && (
+                                                  <span className="text-xs text-yellow-300 font-medium mt-1 block">
+                                                      {formatTimeAgo(item.timestamp, currentTime)}
+                                                  </span>
+                                              )}
                                               {item.note && (
                                                 <p className="text-sm text-purple-300 italic pt-2 pl-1 border-l-2 border-purple-400/50 ml-1 mt-2">{item.note}</p>
                                               )}
@@ -466,11 +484,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
 
                                             <div className="flex flex-col items-end gap-2 flex-shrink-0">
                                                 <div className="flex items-center gap-2">
-                                                    {item.status === 'pending' && (
-                                                        <span className="text-xs text-yellow-300 font-medium">
-                                                            {formatTimeAgo(item.timestamp, currentTime)}
-                                                        </span>
-                                                    )}
                                                     <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${item.status === 'pending' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>
                                                         {item.status === 'pending' ? 'Pendiente' : 'Comandado'}
                                                     </span>
