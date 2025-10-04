@@ -44,27 +44,26 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [noteModalItem, setNoteModalItem] = useState<OrderItem | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [swipeState, setSwipeState] = useState<{ id: string | null, x: number }>({ id: null, x: 0 });
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const swipeStartRef = useRef<{ x: number, y: number } | null>(null);
 
-  // --- Swipe Gesture Logic ---
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const MIN_SWIPE_DISTANCE = 100;
 
   useEffect(() => {
-    // Set the initial active guest to the highest existing guest number, or 1 for a new order.
-    // This runs only once when the modal is opened.
     if (table.order.length > 0) {
       const maxGuest = Math.max(...table.order.map(item => item.guest || 1), 1);
       setActiveGuest(maxGuest);
     } else {
       setActiveGuest(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 30000); // Update time every 30 seconds
+    }, 30000);
     return () => clearInterval(timer);
   }, []);
   
@@ -96,7 +95,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
     const swipeDistanceX = touchEndX - touchStartRef.current.x;
     const swipeDistanceY = touchEndY - touchStartRef.current.y;
 
-    // Check for a predominantly horizontal swipe to the right
     if (swipeDistanceX > MIN_SWIPE_DISTANCE && Math.abs(swipeDistanceX) > Math.abs(swipeDistanceY) * 1.5) {
       onClose();
     }
@@ -110,6 +108,53 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
     }
     setNoteModalItem(null);
   };
+  
+  const handleItemTouchStart = (e: React.TouchEvent, itemId: string) => {
+    if (deletingItemId) return;
+    if (swipeState.id && swipeState.id !== itemId) {
+        setSwipeState({ id: null, x: 0 });
+    }
+    swipeStartRef.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
+  };
+
+  const handleItemTouchMove = (e: React.TouchEvent, itemId: string) => {
+    if (!swipeStartRef.current || deletingItemId) return;
+
+    const deltaX = e.targetTouches[0].clientX - swipeStartRef.current.x;
+    const deltaY = e.targetTouches[0].clientY - swipeStartRef.current.y;
+
+    if (swipeState.id === null && Math.abs(deltaY) > Math.abs(deltaX)) {
+        swipeStartRef.current = null;
+        return;
+    }
+
+    if (swipeState.id !== null || Math.abs(deltaX) > 10) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    setSwipeState({ id: itemId, x: Math.min(0, deltaX) });
+  };
+
+  const handleItemTouchEnd = (item: OrderItem) => {
+    if (deletingItemId) return;
+    const threshold = -80;
+    if (swipeState.id && swipeState.x < threshold) {
+        setDeletingItemId(item.id);
+    } else if (swipeState.id) {
+        setSwipeState({ id: null, x: 0 });
+    }
+    swipeStartRef.current = null;
+  };
+  
+  const handleAnimationEnd = (item: OrderItem) => {
+    if (deletingItemId === item.id) {
+        onRequestDeleteItem(item.id, item.name);
+        setDeletingItemId(null);
+        setSwipeState({ id: null, x: 0 });
+    }
+  };
+
 
   const groupedOrder = useMemo(() => {
     return table.order.reduce((acc, item) => {
@@ -143,7 +188,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
   
   const handleSetActiveGuest = (guestNumber: number) => {
     setActiveGuest(guestNumber);
-    setIsSummaryView(false); // Switch back to detail view when a guest is selected
+    setIsSummaryView(false);
   };
   
   const handleAddNewGuest = () => {
@@ -191,6 +236,22 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
     >
+        <style>{`
+            @keyframes slide-out-to-left {
+              to {
+                transform: translateX(-110%);
+                opacity: 0;
+                max-height: 0;
+                margin: 0;
+                padding: 0;
+                border-width: 0;
+                overflow: hidden;
+              }
+            }
+            .animate-slide-out {
+              animation: slide-out-to-left 0.4s ease-out forwards;
+            }
+        `}</style>
         <NoteModal
             isOpen={!!noteModalItem}
             onClose={() => setNoteModalItem(null)}
@@ -360,69 +421,79 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                                         const partsA = parse(a.id);
                                         const partsB = parse(b.id);
                                         
-                                        // Compare main part (the timestamp)
                                         if (partsB[0] !== partsA[0]) {
                                             return partsB[0] - partsA[0];
                                         }
                                         
-                                        // If main part is same, it's a commanded item and its pending additions.
-                                        // A higher sub-part means it's newer (e.g., .1, .2). It should come first.
-                                        const subA = partsA[1] || 0; // Commanded item has no sub-part, defaults to 0
+                                        const subA = partsA[1] || 0;
                                         const subB = partsB[1] || 0;
                                         
                                         return subB - subA;
                                     }).map(item => (
                                     <div
-                                      key={item.id}
-                                      className={`p-3 rounded-lg ${item.status === 'pending' ? 'bg-yellow-900/50' : 'bg-green-800/40'}`}
+                                        key={item.id}
+                                        className={`relative rounded-lg overflow-hidden ${deletingItemId === item.id ? 'animate-slide-out' : ''}`}
+                                        onAnimationEnd={() => handleAnimationEnd(item)}
                                     >
-                                      <div className="flex items-start justify-between">
-                                        <div 
-                                          className="flex-grow mr-2 cursor-pointer"
-                                          onDoubleClick={() => setNoteModalItem(item)}
+                                        <div className="absolute inset-y-0 right-0 flex flex-col items-center justify-center bg-red-600 text-white w-20 pointer-events-none">
+                                            <TrashIcon />
+                                            <span className="text-xs font-bold mt-1">Eliminar</span>
+                                        </div>
+                                        <div
+                                          style={{
+                                              transform: `translateX(${swipeState.id === item.id ? swipeState.x : 0}px)`,
+                                              transition: swipeState.id === null && !deletingItemId ? 'transform 0.3s ease-out' : 'none'
+                                          }}
+                                          onTouchStart={(e) => handleItemTouchStart(e, item.id)}
+                                          onTouchMove={(e) => handleItemTouchMove(e, item.id)}
+                                          onTouchEnd={() => handleItemTouchEnd(item)}
+                                          className={`relative z-10 p-3 rounded-lg bg-gray-700 border-l-4 ${item.status === 'pending' ? 'border-yellow-500' : 'border-green-500'}`}
                                         >
-                                          <p className="font-semibold text-white mb-1">{item.quantity} x {getDisplayName(item.name)}</p>
-                                          <div className="text-sm text-gray-400">
-                                            <span>{item.price.toFixed(2)} €</span>
-                                            <span className="font-bold text-gray-200 ml-4">Total: {(item.quantity * item.price).toFixed(2)} €</span>
-                                          </div>
-                                          {item.note && (
-                                            <p className="text-sm text-purple-300 italic pt-2 pl-1 border-l-2 border-purple-400/50 ml-1 mt-2">{item.note}</p>
-                                          )}
-                                        </div>
+                                          <div className="flex items-start justify-between">
+                                            <div 
+                                              className="flex-grow mr-2 cursor-pointer"
+                                              onDoubleClick={() => setNoteModalItem(item)}
+                                            >
+                                              <p className="font-semibold text-white mb-1">{item.quantity} x {getDisplayName(item.name)}</p>
+                                              <div className="text-sm text-gray-400">
+                                                <span>{item.price.toFixed(2)} €</span>
+                                                <span className="font-bold text-gray-200 ml-4">Total: {(item.quantity * item.price).toFixed(2)} €</span>
+                                              </div>
+                                              {item.note && (
+                                                <p className="text-sm text-purple-300 italic pt-2 pl-1 border-l-2 border-purple-400/50 ml-1 mt-2">{item.note}</p>
+                                              )}
+                                            </div>
 
-                                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                            <div className="flex items-center gap-2">
-                                                {item.status === 'pending' && (
-                                                    <span className="text-xs text-yellow-300 font-medium">
-                                                        {formatTimeAgo(item.timestamp, currentTime)}
+                                            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                                <div className="flex items-center gap-2">
+                                                    {item.status === 'pending' && (
+                                                        <span className="text-xs text-yellow-300 font-medium">
+                                                            {formatTimeAgo(item.timestamp, currentTime)}
+                                                        </span>
+                                                    )}
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${item.status === 'pending' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>
+                                                        {item.status === 'pending' ? 'Pendiente' : 'Comandado'}
                                                     </span>
-                                                )}
-                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap ${item.status === 'pending' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>
-                                                    {item.status === 'pending' ? 'Pendiente' : 'Comandado'}
-                                                </span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => onDecrementItem(item.id)}
+                                                        className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
+                                                        aria-label={`Quitar uno de ${item.name}`}
+                                                    >
+                                                        <MinusIcon />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => onAddItem({ name: item.name, quantity: 1, price: item.price, note: item.note, guest: item.guest }, item.id)}
+                                                        className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
+                                                        aria-label={`Añadir uno más de ${item.name}`}
+                                                    >
+                                                        <PlusIcon />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <button
-                                                    onClick={() => onDecrementItem(item.id)}
-                                                    className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
-                                                    aria-label={`Quitar uno de ${item.name}`}
-                                                >
-                                                    <MinusIcon />
-                                                </button>
-                                                <button
-                                                    onClick={() => onAddItem({ name: item.name, quantity: 1, price: item.price, note: item.note, guest: item.guest }, item.id)}
-                                                    className="text-gray-400 hover:text-purple-400 transition-colors p-1 rounded-full hover:bg-gray-600"
-                                                    aria-label={`Añadir uno más de ${item.name}`}
-                                                >
-                                                    <PlusIcon />
-                                                </button>
-                                                <button onClick={() => onRequestDeleteItem(item.id, item.name)} className="text-gray-500 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-gray-600">
-                                                    <TrashIcon />
-                                                </button>
-                                            </div>
+                                          </div>
                                         </div>
-                                      </div>
                                     </div>
                                     ))}
                                 </div>
