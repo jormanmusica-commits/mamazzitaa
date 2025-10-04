@@ -8,14 +8,13 @@ import { CogIcon } from '../components/icons';
 const initialLayouts: Record<string, Table[]> = {
   principal: [
     // Row 1 (Reversed)
-    { id: 15, name: '15', x: 5, y: 10, status: TableStatus.Available, order: [], shape: 'square' },
+    { id: 15, name: '15', x: 5, y: 10, status: TableStatus.Available, order: [], shape: 'large-round' },
     { id: 14, name: '14', x: 24, y: 10, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 12, name: '12', x: 43, y: 10, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 11, name: '11', x: 62, y: 10, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 10, name: '10', x: 81, y: 10, status: TableStatus.Available, order: [], shape: 'square' },
     // Row 2 (20s row, reversed)
-    { id: 24, name: '24', x: 5, y: 35, status: TableStatus.Available, order: [], shape: 'square' },
-    { id: 23, name: '23', x: 24, y: 35, status: TableStatus.Available, order: [], shape: 'square' },
+    { id: 23, name: '23', x: 5, y: 35, status: TableStatus.Available, order: [], shape: 'large-round' },
     { id: 22, name: '22', x: 43, y: 35, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 21, name: '21', x: 62, y: 35, status: TableStatus.Available, order: [], shape: 'square' },
     { id: 20, name: '20', x: 81, y: 35, status: TableStatus.Available, order: [], shape: 'square' },

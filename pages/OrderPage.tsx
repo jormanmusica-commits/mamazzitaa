@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, OrderItem, TableStatus, Product } from '../types';
 import NoteModal from '../components/NoteModal';
+import BillModal from '../components/BillModal';
 import { CloseIcon, TrashIcon, PlusIcon, UserIcon, MinusIcon, SearchIcon, DisketteIcon, BellIcon, PrinterIcon, XCircleIcon, ChevronLeftIcon, ListBulletIcon } from '../components/icons';
 
 interface OrderPageProps {
@@ -48,6 +49,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
   const [swipeState, setSwipeState] = useState<{ id: string | null, x: number }>({ id: null, x: 0 });
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const swipeStartRef = useRef<{ x: number, y: number } | null>(null);
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false);
 
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const MIN_SWIPE_DISTANCE = 100;
@@ -225,6 +227,11 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
     setFilteredProducts(results);
   };
   
+  const handleShowBill = () => {
+    onPrintBill();
+    setIsBillModalOpen(true);
+  };
+  
   const hasPendingItems = useMemo(() => table.order.some(item => item.status === 'pending'), [table.order]);
   const totalAmount = useMemo(() => table.order.reduce((sum, item) => sum + (item.quantity * item.price), 0), [table.order]);
   
@@ -253,6 +260,11 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
               animation: slide-out-to-left 0.4s ease-out forwards;
             }
         `}</style>
+        <BillModal 
+            isOpen={isBillModalOpen}
+            onClose={() => setIsBillModalOpen(false)}
+            table={table}
+        />
         <NoteModal
             isOpen={!!noteModalItem}
             onClose={() => setNoteModalItem(null)}
@@ -558,7 +570,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ table, products, onClose, onAddIt
                     <span className="text-xs tracking-wider uppercase">Comandar</span>
                   </button>
                   <button
-                    onClick={onPrintBill}
+                    onClick={handleShowBill}
                     disabled={hasPendingItems || table.order.length === 0}
                     className="flex flex-col items-center justify-center gap-1 p-2 font-bold rounded-lg transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed aspect-square bg-blue-500 hover:bg-blue-600 text-white"
                     aria-label="Imprimir Cuenta"

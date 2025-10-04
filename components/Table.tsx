@@ -51,6 +51,7 @@ const getStatusClasses = (status: TableStatus, isChangingTableMode: boolean, isS
 const Table: React.FC<TableProps> = ({ table, isEditMode, onDragStart, onDelete, isChangingTableMode, sourceTableId, onTableClick, isAlerting }) => {
   const tableShapeClasses = 
       table.shape === 'round' ? 'w-10 h-10 rounded-full'
+    : table.shape === 'large-round' ? 'w-16 h-16 rounded-full'
     : table.shape === 'double' ? 'w-32 h-16 rounded-lg'
     : 'w-16 h-16 rounded-lg';
 

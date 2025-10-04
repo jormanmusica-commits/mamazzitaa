@@ -25,7 +25,7 @@ export interface Table {
   y: number;
   status: TableStatus;
   order: OrderItem[];
-  shape?: 'square' | 'round' | 'double';
+  shape?: 'square' | 'round' | 'double' | 'large-round';
 }
 
 export interface Product {
